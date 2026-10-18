@@ -8,7 +8,8 @@ export const WORLDS = [
   // ------------------------------------------------------------------ 1
   {
     id: 'meadow', name: 'Meadow Isles', sub: 'World 1', track: 'meadow', top: 0x7ad35a, side: 0xa8714a,
-    sky: [0x5fb8ff, 0xe4f6ff], fog: [0xcdeeff, 60, 190], sun: 0xfff1d6, enemyColor: 0x8e5bd6, accent: 0x7ae582, spring: 0xff4f7b,
+    sky: [0x3f8fe8, 0xdcefff], skyBelow: 0x9cc3e6, fog: [0xd3eafc, 90, 330], sun: 0xfff1d6, enemyColor: 0x8e5bd6, accent: 0x7ae582, spring: 0xff4f7b,
+    sunDir: [-0.48, 0.34, 0.81], cloudSea: { y: -9, lit: 0xffffff, shade: 0xa9bfdc, haze: 0xdcefff }, clouds: 30, islands: 9, rocky: true, rock: 0x8a735e, bounce: 0x9fb4cc,
     killY: -14, spawn: [0, 0, -2],
     build(B) {
       const tree = (x, y, z, s = 1) => B.decor(M.makeTree(0x8b5a2b, [0x5fbf4a, 0x4fae5a, 0x7fcf4f][Math.abs(Math.round(x + z)) % 3], s), x, y, z);
@@ -41,13 +42,13 @@ export const WORLDS = [
       B.coinLine([0, 6, 128], [-1, 9, 140], 6);
       B.box(0, 3, 152, 14, 5, 14); tree(5, 3, 156); tree(-5, 3, 147, 1.3);
       B.enemy('turret', -4, 3, 156, { rate: 2.6 }); B.goal(0, 3, 156);
-      for (let i = 0; i < 14; i++) { const a = i * 2.4, r = 70 + (i % 3) * 20; B.decor(cloud(), sin(a) * r, 18 + (i % 4) * 6, 80 + cos(a) * r); }
     },
   },
   // ------------------------------------------------------------------ 2
   {
     id: 'frost', name: 'Frost Peaks', sub: 'World 2', track: 'frost', top: 0xf4fbff, side: 0x8fa3c0, ice: 0xbfefff,
-    sky: [0x7fb2ff, 0xeaf6ff], fog: [0xe8f4ff, 50, 170], sun: 0xffffff, enemyColor: 0x4f8ef7, accent: 0x9ad8ff, spring: 0x59c3ff,
+    sky: [0x5b97f0, 0xeaf6ff], skyBelow: 0xb4cde8, fog: [0xe8f4ff, 50, 170], sun: 0xffffff, enemyColor: 0x4f8ef7, accent: 0x9ad8ff, spring: 0x59c3ff,
+    sunDir: [0.5, 0.3, 0.81], cloudSea: { y: -8, lit: 0xffffff, shade: 0xb3c4dc, haze: 0xeaf6ff }, clouds: 18, rocky: true, rock: 0x8b95a3, bounce: 0xa9bbd2,
     killY: -12, spawn: [0, 3, -2], power: 'rocket',
     build(B) {
       const pine = (x, y, z, s = 1) => B.decor(M.makePine(s), x, y, z);
@@ -222,11 +223,6 @@ export const HUB = {
 };
 
 // ---------- scenery helpers ----------
-function cloud() {
-  const g = new THREE.Group(), m = M.mat(0xffffff, { rough: 1 });
-  for (let i = 0; i < 5; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(2 + (i % 2), 12, 10), m); s.position.set(i * 2.2 - 4, (i % 2) * 0.8, (i % 3) * 0.6); g.add(s); }
-  return g;
-}
 function mountain(color, h) {
   const g = new THREE.Group();
   const m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.7, h, 7), M.mat(0x8fa3c0, { flat: true })); m.position.y = h / 2; g.add(m);

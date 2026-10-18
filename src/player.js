@@ -1,8 +1,18 @@
 import * as THREE from 'three';
 import { makeHero } from './models.js';
 
-const G = 34, JUMP_V = 13, MAX_RUN = 8, ACCEL = 70, AIR_ACCEL = 34, FRICTION = 16, ICE_FRICTION = 1.6;
-const HOVER_TIME = 1.1, DASH_V = 17, DASH_T = 0.2, COYOTE = 0.12, BUFFER = 0.13;
+// Jump physics are derived from two design numbers rather than tuned by hand:
+//   JUMP_H = apex height of a full (held) jump in metres (Bolt is 1.5 m tall, so ~2.2 body heights)
+//   JUMP_T = time to reach that apex in seconds
+// Constant-acceleration kinematics give the gravity and launch speed that hit both exactly:
+//   h = v²/2g and t = v/g  =>  g = 2h/t², v = 2h/t
+// Falling uses a little more gravity (snappier, less floaty), and letting go of A early while rising adds
+// CUT_MULT× gravity, so a tap gives a short hop (JUMP_H / CUT_MULT) and a hold gives the full jump.
+const JUMP_H = 3.3, JUMP_T = 0.42, FALL_MULT = 1.25, CUT_MULT = 2.5;
+const G = 2 * JUMP_H / (JUMP_T * JUMP_T), JUMP_V = 2 * JUMP_H / JUMP_T;   // 37.4 m/s², 15.7 m/s
+const LAUNCH = Math.sqrt(G / 34);   // springs / rocket were tuned for g = 34: scale their launch speed so they reach the same heights
+const MAX_FALL = 30, MAX_RUN = 8, ACCEL = 70, AIR_ACCEL = 34, FRICTION = 16, ICE_FRICTION = 1.6;
+const HOVER_TIME = 1.1, HOVER_SINK = 0.35, DASH_V = 17, DASH_T = 0.2, COYOTE = 0.12, BUFFER = 0.13;
 
 export class Player {
   constructor(game) {
@@ -24,7 +34,8 @@ export class Player {
     this.hoverLeft = HOVER_TIME; this.hovering = false; this.dashT = 0; this.dashCd = 0; this.airDash = true;
     this.punchT = 0; this.spinT = 0; this.spinUsed = false; this.pound = 0; this.poundWind = 0;
     this.invul = 0; this.zip = null; this.landSquash = 0; this.animT = 0; this.knock = 0; this.swimCd = 0;
-    this.dead = false; this.waveT = 0;
+    this.dead = false; this.waveT = 0; this.jumping = false;
+    this.safe = null;   // last solid, static spot Bolt stood on: falling off the map puts him back here
   }
 
   get attacking() { return this.punchT > 0 || this.spinT > 0 || this.pound === 2 || this.dashT > 0; }
@@ -68,7 +79,7 @@ export class Player {
     // --- magnet zip: fly to node, gravity off ---
     if (this.zip) {
       const to = this.zip.clone().sub(this.center()), d = to.length();
-      if (d < 0.9 || inp.pressed('A')) { this.vel.set(0, inp.pressed('A') ? JUMP_V * 0.9 : 6, 0); this.zip = null; this.hoverLeft = HOVER_TIME; this.airDash = true; }
+      if (d < 0.9 || inp.pressed('A')) { const jump = inp.pressed('A'); this.vel.set(0, jump ? JUMP_V * 0.9 : 6, 0); this.jumping = jump; this.zip = null; this.hoverLeft = HOVER_TIME; this.airDash = true; }
       else { to.normalize().multiplyScalar(24); this.vel.copy(to); this.facing = Math.atan2(to.x, to.z); }
     } else {
       // --- horizontal control ---
@@ -89,13 +100,13 @@ export class Player {
       if (water) {
         if (this.buffer > 0 && this.swimCd <= 0) { this.vel.y = Math.max(this.vel.y, 7); this.buffer = 0; this.swimCd = 0.22; game.audio.sfx('swim'); game.fx.bubbles(this.center(), 4); }
       } else if (this.buffer > 0 && (this.grounded || this.coyote > 0) && this.pound === 0) {
-        this.vel.y = JUMP_V; this.grounded = false; this.coyote = 0; this.buffer = 0; this.landSquash = -0.25; game.audio.sfx('jump');
+        this.vel.y = JUMP_V; this.jumping = true; this.grounded = false; this.coyote = 0; this.buffer = 0; this.landSquash = -0.25; game.audio.sfx('jump');
       }
-      if (!water && !this.grounded && this.vel.y > 0 && inp.released('A')) this.vel.y *= 0.5;
+      if (this.vel.y <= 0 || water) this.jumping = false;
       this.hovering = !water && !this.grounded && inp.down('A') && this.vel.y < 1 && this.hoverLeft > 0 && this.pound === 0 && this.knock <= 0;
       if (this.hovering) {
-        this.hoverLeft -= dt; this.vel.y = Math.max(this.vel.y, -0.6) + 26 * dt * 0.0;
-        if (this.vel.y < 0.3) this.vel.y = Math.min(0.3, this.vel.y + 40 * dt);
+        // Jets hold Bolt almost level: ease the vertical speed toward a gentle sink (frame-rate independent).
+        this.hoverLeft -= dt; this.vel.y += (-HOVER_SINK - this.vel.y) * Math.min(1, dt * 12);
         if (Math.random() < dt * 20) game.audio.sfx('hover');
         game.hoverBeam(this.pos);
       }
@@ -119,12 +130,16 @@ export class Player {
     }
 
     // --- gravity ---
+    // In the air, gravity is applied half before the move and half after (velocity Verlet), so the position follows
+    // the exact parabola y = v·t − ½g·t² at any frame rate instead of undershooting the apex.
+    let grav = 0;
     if (!this.zip) {
       if (this.pound === 1) { this.poundWind -= dt; this.vel.set(0, 0, 0); if (this.poundWind <= 0) { this.pound = 2; this.vel.y = -30; } }
       else if (water) { this.vel.y -= 9 * dt; this.vel.y = Math.max(this.vel.y, -3.5); this.vel.multiplyScalar(1 - Math.min(1, dt * 1.2)); }
-      else if (this.dashT > 0 && !this.grounded) this.vel.y -= G * 0.3 * dt;
-      else this.vel.y -= G * (game.gravityScale ?? 1) * dt;
-      this.vel.y = Math.max(this.vel.y, -32);
+      else if (this.dashT > 0 && !this.grounded) grav = G * 0.3;
+      else if (!this.hovering) grav = G * (this.vel.y < 0 ? FALL_MULT : this.jumping && !inp.down('A') ? CUT_MULT : 1) * (game.gravityScale ?? 1);
+      this.vel.y -= grav * dt / 2;
+      this.vel.y = Math.max(this.vel.y, this.pound === 2 ? -32 : -MAX_FALL);
     }
 
     // --- ride moving platforms / conveyors ---
@@ -138,6 +153,7 @@ export class Player {
     let ground = null; this.hitWall = null;
     for (let s = 0; s < 2; s++) { const gnd = game.phys.move(this, dt / 2); if (gnd) ground = gnd; if (gnd) this.grounded = true; }
     this.grounded = !!ground; this.ground = ground;
+    if (!this.grounded && grav) this.vel.y = Math.max(this.vel.y - grav * dt / 2, this.pound === 2 ? -32 : -MAX_FALL);
 
     if (this.grounded) {
       this.coyote = COYOTE; this.hoverLeft = HOVER_TIME; this.airDash = true; this.spinUsed = false;
@@ -146,7 +162,8 @@ export class Player {
         if (fallV < -8) { this.landSquash = Math.min(0.35, -fallV / 60); game.audio.sfx('land'); game.fx.puff(this.pos, 5, 0xffffff); }
         if (this.pound === 2) { this.pound = 0; game.onPound(this.pos.clone()); }
       }
-      if (ground.spring) { this.vel.y = ground.spring; this.grounded = false; this.pound = 0; this.landSquash = -0.3; game.onSpring(ground); }
+      if (ground.spring) { this.vel.y = ground.spring * LAUNCH; this.jumping = false; this.grounded = false; this.pound = 0; this.landSquash = -0.3; game.onSpring(ground); }
+      else if (!ground.mover && !ground.crumble && !ground.hurt && !ground.conveyor && !game.inWater(this.pos)) this.safe = safeSpot(ground, this.pos, this.safe || new THREE.Vector3());
       if (ground.hurt) this.hurt(this.pos.clone().add(new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5)));
       if (ground.crumble) game.onCrumble(ground);
     } else if (wasGrounded && this.vel.y <= 0) this.coyote = COYOTE;
@@ -157,7 +174,7 @@ export class Player {
   useY() {
     const game = this.game, kind = this.power?.kind;
     if (kind === 'rocket' && this.power.charges > 0) {
-      this.power.charges--; this.vel.y = 17; this.grounded = false; this.pound = 0; game.audio.sfx('rocket'); game.fx.puff(this.pos, 10, 0xff8a2b); return;
+      this.power.charges--; this.vel.y = 17 * LAUNCH; this.jumping = false; this.grounded = false; this.pound = 0; game.audio.sfx('rocket'); game.fx.puff(this.pos, 10, 0xff8a2b); return;
     }
     if (kind === 'magnet') {
       const node = game.nearestMagnet(this.center(), 16);
@@ -197,4 +214,18 @@ export class Player {
     const gy = this.game.phys.groundBelow(this.pos.x, this.pos.y + 0.1, this.pos.z);
     this.shadow.visible = gy > -1e9; if (this.shadow.visible) { this.shadow.position.set(this.pos.x, gy + 0.03, this.pos.z); const k = Math.max(0.3, 1 - (this.pos.y - gy) / 12); this.shadow.scale.setScalar(k); this.shadow.material.opacity = 0.35 * k; }
   }
+}
+
+// Where Bolt stands on collider c, pulled at least a body-width in from the edge so a respawn there is not a ledge.
+function safeSpot(c, p, out) {
+  const m = 0.9;
+  if (c.kind === 'box') {
+    const cx = (c.min.x + c.max.x) / 2, cz = (c.min.z + c.max.z) / 2;
+    const x = c.max.x - c.min.x > 2 * m ? Math.max(c.min.x + m, Math.min(c.max.x - m, p.x)) : cx;
+    const z = c.max.z - c.min.z > 2 * m ? Math.max(c.min.z + m, Math.min(c.max.z - m, p.z)) : cz;
+    return out.set(x, c.max.y, z);
+  }
+  const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), lim = Math.max(0, c.r - m);
+  const s = d > lim ? lim / d : 1;
+  return out.set(c.x + dx * s, c.y1, c.z + dz * s);
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mat } from './models.js';
+import { rockGeometry } from './scenery.js';
 
 // Colliders: axis-aligned boxes and vertical cylinders. The player is a vertical cylinder (feet position, radius, height).
 // Box collider: { kind:'box', min, max, flags } ; Cyl collider: { kind:'cyl', x, z, r, y0, y1, flags }.
@@ -86,9 +87,20 @@ export class Builder {
     const grp = new THREE.Group(); grp.add(body);
     if (!o.noTop) { const top = new THREE.Mesh(new THREE.BoxGeometry(w + 0.12, topH, d + 0.12), mat(o.top ?? (o.ice ? t.ice ?? 0xbfefff : t.top), { rough: o.ice ? 0.1 : 0.7, metal: o.ice ? 0.2 : 0 }));
       top.position.set(x, y - topH / 2, z); top.castShadow = top.receiveShadow = true; grp.add(top); }
+    this._rock(grp, w * 0.62, d * 0.62,Math.min(9, Math.min(w, d) * 0.75), x, y - h, z, o, h);
     this._addMesh(grp);
     const c = this.phys.add({ kind: 'box', min: new THREE.Vector3(x - w / 2, y - h, z - d / 2), max: new THREE.Vector3(x + w / 2, y, z + d / 2), ...o, mesh: grp });
     return c;
+  }
+  // Rough rock hanging under terrain platforms (looks only, no collider). Themes opt in with `rocky`;
+  // coloured special platforms (movers, crumbles, clouds) and thin slabs are left as they are.
+  _rock(grp, rw, rd, depth, x, y, z, o, h, local = false) {
+    if (!this.t.rocky || o.top !== undefined || o.noRock || h < 1.5) return;
+    const seed = x * 0.73 + y * 0.31 + z * 0.17;
+    const m = new THREE.Mesh(rockGeometry(seed), mat(this.t.rock ?? 0x6f5a48, { flat: true, rough: 1 }));
+    m.scale.set(rw, depth * (0.85 + (Math.abs(Math.sin(seed * 12.9898)) % 1) * 0.3), rd);
+    if (local) m.position.y = y; else m.position.set(x, y, z);
+    grp.add(m);
   }
   // Round platform (top at y).
   cyl(x, y, z, r, h, o = {}) {
@@ -99,6 +111,8 @@ export class Builder {
     const top = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.06, r + 0.06, topH, 28), mat(o.top ?? (o.ice ? t.ice ?? 0xbfefff : t.top), { rough: o.ice ? 0.1 : 0.7 }));
     top.position.y = -topH / 2; grp.add(top);
     grp.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; } });
+    const rb = r * (o.taper ?? 0.7) * 0.98;
+    this._rock(grp, rb, rb, Math.min(9, r * 1.2), x, -h, z, o, h, true);
     grp.position.set(x, y, z); this._addMesh(grp);
     return this.phys.add({ kind: 'cyl', x, z, r, y0: y - h, y1: y, ...o, mesh: grp });
   }

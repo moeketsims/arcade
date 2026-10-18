@@ -70,6 +70,11 @@ Q/E = L1/R1, Z = L2, Shift = R2, F = L3, G = R3, 1–4 = D-pad, M = Create.
 A jump/hover · B or R2 dash · X punch/spin · Y ground pound / gadget / scan · L1/R1 swing camera 45° ·
 L2 close-up · D-pad zoom/rotate camera · L3 wave · R3 camera behind Bolt · Create music · Options pause.
 
+Jumping: tap A for a short hop (about 1.5 m), hold it for the full jump (3.3 m, about twice Bolt's height), and keep
+holding after the top to hover. The jump is set by its height and rise time (`JUMP_H`, `JUMP_T` in `src/player.js`);
+gravity and launch speed are derived from them, and the arc is the same at any frame rate. Falling off costs a heart
+and puts Bolt back on the last solid ground he stood on.
+
 ## Storm Royale controls
 
 A jump · glider · jump from the balloon · B build mode · X reload, hold to open chests / pick up · Y pickaxe (press

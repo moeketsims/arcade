@@ -8,6 +8,7 @@ import { Player } from './player.js';
 import { Entities, FX } from './entities.js';
 import { Boss } from './boss.js';
 import { WORLDS, HUB } from './levels.js';
+import { Atmosphere } from './scenery.js';
 import { makeBot } from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -75,22 +76,12 @@ class Game {
   isUnlocked(i) { if (i === 0) return true; if (WORLDS[i].boss) return WORLDS.slice(0, 5).every(w => this.save.done.includes(w.id)); return this.save.done.includes(WORLDS[i - 1].id); }
 
   // ---------- visuals ----------
-  makeSky() {
-    this.skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { top: { value: new THREE.Color() }, bottom: { value: new THREE.Color() } },
-      vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: 'uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = clamp(vP.y*0.5+0.5,0.0,1.0); gl_FragColor = vec4(mix(bottom, top, smoothstep(0.35,1.0,h)),1.0); }' });
-    this.sky = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), this.skyMat); this.scene.add(this.sky);
-    const n = 1500, pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(500); pos.set([v.x, v.y, v.z], i * 3); }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false })); this.scene.add(this.stars);
-  }
+  makeSky() { this.atmo = new Atmosphere(this.scene); this.sky = this.atmo.sky; this.stars = this.atmo.stars; }
   applyTheme(t) {
-    this.skyMat.uniforms.top.value.set(t.sky[0]); this.skyMat.uniforms.bottom.value.set(t.sky[1]);
+    this.atmo.apply(t);
     this.scene.fog = new THREE.Fog(t.fog[0], t.fog[1], t.fog[2]);
-    this.stars.visible = !!t.stars; this.sun.color.set(t.sun ?? 0xffffff);
-    this.hemi.intensity = t.ambient ?? 0.9; this.hemi.groundColor.set(t.underwater ? 0x0a4a7a : 0x445566);
+    this.sun.color.set(t.sun ?? 0xffffff);
+    this.hemi.intensity = t.ambient ?? 0.9; this.hemi.groundColor.set(t.underwater ? 0x0a4a7a : t.bounce ?? 0x445566);   // bounce: light reflected up from a cloud sea
     this.sun.intensity = t.underwater ? 1.4 : 2.2;
   }
   resize() { const w = innerWidth, h = innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
@@ -164,7 +155,8 @@ class Game {
   fellOut() {
     const P = this.player; P.hp -= 1; this.audio.sfx('hurt');
     if (P.hp <= 0) { P.dead = true; this.onDeath(); return; }
-    this.transition(() => { const hp = P.hp, pw = P.power; P.reset(this.checkpoint.clone()); P.hp = hp; P.power = pw; P.invul = 1.2; this.snapCamera(); });
+    // Put Bolt back on the last solid ground he stood on (costs a heart), not all the way back at the checkpoint.
+    this.transition(() => { const hp = P.hp, pw = P.power, safe = P.safe?.clone(); P.reset(safe ?? this.checkpoint.clone(), P.facing); P.hp = hp; P.power = pw; P.safe = safe ?? null; P.invul = 1.2; this.snapCamera(); });
   }
   completeLevel() {
     const w = this.level; this.audio.sfx('portal'); this.state = 'results';
@@ -222,8 +214,8 @@ class Game {
     this.camera.position.copy(c.pos);
     if (c.shake > 0) { this.camera.position.add(new THREE.Vector3((Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake)); c.shake = Math.max(0, c.shake - dt * 1.5); }
     this.camera.lookAt(c.look);
-    this.sun.position.set(P.pos.x + 18, P.pos.y + 30, P.pos.z - 12); this.sun.target.position.copy(P.pos);
-    this.sky.position.copy(this.camera.position); this.stars.position.copy(this.camera.position);
+    this.sun.position.copy(P.pos).addScaledVector(this.atmo.sunDir, 40); this.sun.target.position.copy(P.pos);   // light comes from where the sun is drawn
+    this.atmo.update(dt, this.camera.position);
   }
 
   // ---------- main loop ----------
