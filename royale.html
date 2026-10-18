@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storm Royale</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="src/royale/royale.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<canvas id="fx2d"></canvas>
+<div id="stormTint"></div>
+<div id="hurtFlash"></div>
+<div id="scope" class="hidden"><div class="ring"></div><i class="h"></i><i class="v"></i><i class="dot"></i></div>
+
+<div id="hud" class="hidden">
+  <canvas id="compass" width="720" height="44"></canvas>
+  <div id="topRight">
+    <canvas id="minimap" width="360" height="360"></canvas>
+    <div id="statRow"><span class="pill" id="aliveP"></span><span class="pill" id="killsP"></span></div>
+    <div id="stormInfo" class="pill wide"></div>
+  </div>
+  <div id="feed"></div>
+  <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="dot"></i></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="prompt" class="hidden"></div>
+  <div id="progress" class="hidden"><div class="fill"></div><span></span></div>
+  <div id="busInfo" class="hidden"></div>
+  <div id="buildInfo" class="hidden"></div>
+  <div id="bottomLeft">
+    <div id="shieldBar" class="bar"><div class="fill"></div><span></span></div>
+    <div id="hpBar" class="bar"><div class="fill"></div><span></span></div>
+  </div>
+  <div id="hotbar"></div>
+  <div id="bottomRight"><div id="mats"></div><div id="weapon"></div></div>
+  <div id="hints"></div>
+  <div id="locLabel"></div>
+  <div id="hudBanner"></div>
+  <div id="hudToast"></div>
+  <div id="mouseHint" class="hidden">Click the screen to capture the mouse</div>
+</div>
+
+<div id="loading" class="screen">
+  <h1 class="logo">STORM<br>ROYALE</h1>
+  <p class="sub" id="loadMsg">Building the island...</p>
+  <div class="loadbar"><div id="loadFill"></div></div>
+</div>
+
+<div id="title" class="screen hidden">
+  <h1 class="logo">STORM<br>ROYALE</h1>
+  <p class="sub">Drop in. Loot up. Build high. Be the last one standing.</p>
+  <p class="blink" id="startPrompt"></p>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <h2>Paused</h2>
+  <div class="menu2" id="pauseMenu"></div>
+  <div class="legend small" id="pauseLegend"></div>
+</div>
+
+<div id="end" class="screen hidden">
+  <div id="endKicker"></div>
+  <h1 id="endTitle"></h1>
+  <div id="endStats"></div>
+  <div class="menu2" id="endMenu"></div>
+</div>
+
+<div id="pad" class="padstatus"></div>
+<script type="module" src="src/royale/main.js"></script>
+</body>
+</html>

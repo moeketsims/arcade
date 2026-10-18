@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0f1d; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; user-select: none; }
+#c { display: block; width: 100vw; height: 100vh; }
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#score { position: absolute; top: 18px; left: 22px; display: flex; align-items: center; gap: 0; background: #0b1020e6; border-radius: 10px; overflow: hidden; font-weight: 800; font-size: 20px; box-shadow: 0 6px 18px #0007; }
+#score .team { padding: 7px 12px; letter-spacing: 1px; }
+#score .num { padding: 7px 10px; background: #ffffff14; min-width: 34px; text-align: center; }
+#score .dash { padding: 0 4px; opacity: .6; }
+#clock { padding: 7px 12px; background: #33e0ff; color: #08203a; }
+#ptag { position: absolute; left: 22px; bottom: 22px; background: #0b1020d0; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 10px; }
+#pnum { background: #33e0ff; color: #08203a; border-radius: 6px; padding: 1px 7px; font-weight: 900; }
+#stam { width: 90px; height: 7px; background: #ffffff22; border-radius: 4px; overflow: hidden; }
+#stam i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ffd166, #5be37a); }
+#power { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#power .bar { width: 240px; height: 14px; border-radius: 8px; background: #0009; border: 2px solid #fff8; overflow: hidden; }
+#power .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #5be37a, #ffd166 70%, #ff4d4d); }
+#powerLabel { font-weight: 800; font-size: 15px; text-shadow: 0 2px 3px #000; }
+#prompt { position: absolute; left: 50%; bottom: 168px; transform: translateX(-50%); font-weight: 700; font-size: 17px; text-shadow: 0 2px 3px #000c; white-space: nowrap; display: flex; gap: 14px; }
+#prompt span.p { display: flex; gap: 6px; align-items: center; background: #0008; padding: 4px 10px; border-radius: 16px; }
+#tactic { position: absolute; top: 64px; left: 22px; font-size: 14px; opacity: .85; }
+#radar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); border-radius: 8px; background: #0b3d1fb3; border: 1px solid #ffffff44; }
+#saveui { position: absolute; left: 50%; bottom: 190px; transform: translateX(-50%); display: flex; gap: 18px; font: 800 20px "Segoe UI", sans-serif; }
+#saveui div { background: #0b1020e6; padding: 10px 16px; border-radius: 12px; display: flex; gap: 8px; align-items: center; border: 2px solid #33e0ff88; }
+#aimui { position: absolute; right: 22px; bottom: 22px; background: #0b1020d0; border-radius: 10px; padding: 10px 14px; font-size: 15px; line-height: 1.7; }
+#pkboard { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); background: #0b1020e6; padding: 8px 16px; border-radius: 10px; font: 800 18px "Segoe UI"; line-height: 1.5; }
+#pkboard i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin: 0 3px; background: #ffffff22; vertical-align: -2px; }
+#pkboard i.g { background: #5be37a; } #pkboard i.m { background: #ff4d4d; }
+#cut { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .18s; }
+#cut.on { opacity: 1; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 30%, #1e6b37dd, #04130be8); gap: 10px; }
+.screen h1 { font-size: clamp(44px, 7vw, 86px); margin: 0 0 18px; letter-spacing: 6px; font-weight: 900; }
+.screen h1 span { color: #5be37a; }
+.screen h2 { font-size: 46px; margin: 0; }
+.hint { opacity: .8; font-size: 16px; }
+#menuList { min-width: 460px; }
+#menuList div { display: flex; justify-content: space-between; gap: 30px; }
+#menuList div b { color: #ffd166; }
+#menuList div.sel b { color: #08203a; }
+#sumBody { font-size: 20px; line-height: 1.6; min-width: 420px; }
+#sumBody table { width: 100%; border-collapse: collapse; }
+#sumBody td { padding: 3px 10px; text-align: center; }
+#sumBody td.l { text-align: right; width: 35%; } #sumBody td.r { text-align: left; width: 35%; }
+#sumBody td.m { opacity: .7; font-size: 16px; }

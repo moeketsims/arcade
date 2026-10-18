@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golazo Football</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="src/football/football.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" class="hidden">
+  <div id="score"><span class="team" id="tHome"></span><span class="num" id="sHome">0</span><span class="dash">–</span><span class="num" id="sAway">0</span><span class="team" id="tAway"></span><span id="clock">0'</span></div>
+  <div id="ptag"><span id="pnum"></span><span id="pname"></span><div id="stam"><i></i></div></div>
+  <div id="power" class="hidden"><div class="bar"><i></i></div><span id="powerLabel"></span></div>
+  <div id="prompt"></div>
+  <div id="tactic"></div>
+  <canvas id="radar" width="220" height="142"></canvas>
+  <div id="saveui" class="hidden"><div><span class="glyph face y">Y</span> ◀ Save left</div><div><span class="glyph face b">B</span> ● Save middle</div><div><span class="glyph face x">X</span> Save right ▶</div></div>
+  <div id="aimui" class="hidden"></div>
+  <div id="pkboard" class="hidden"></div>
+</div>
+<div id="toast" class="toast2"></div>
+<div id="cut"></div>
+<div id="menu" class="screen">
+  <h1>GOLAZO <span>FOOTBALL</span></h1>
+  <div class="menu2" id="menuList"></div>
+  <p class="hint" id="menuHint"></p>
+</div>
+<div id="summary" class="screen hidden"><h2 id="sumTitle"></h2><div id="sumBody"></div><p class="hint" id="sumHint"></p></div>
+<script type="module" src="src/football/main.js"></script>
+</body>
+</html>

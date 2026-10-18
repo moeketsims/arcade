@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starbolt</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="hp" id="hp"></div>
+    <div class="stat"><span class="ico coin"></span><span id="coins">0</span></div>
+    <div class="stat"><span class="ico bot"></span><span id="bots">0/0</span></div>
+  </div>
+  <div class="hud-right">
+    <div id="power" class="power hidden"><span class="btn y">Y</span><span id="powerName"></span><span id="powerCharge"></span></div>
+    <div id="worldName" class="world-name"></div>
+  </div>
+  <div id="prompt" class="prompt hidden"></div>
+  <div id="toast" class="toast"></div>
+  <div id="bossbar" class="bossbar hidden"><div class="bossname">VOID TITAN</div><div class="bossfill" id="bossfill"></div></div>
+</div>
+
+<div id="banner" class="banner"></div>
+<div id="fade" class="fade"></div>
+
+<div id="title" class="screen">
+  <h1>STARBOLT</h1>
+  <p class="sub">A tiny robot. Five worlds. One very large Titan.</p>
+  <p class="blink">Press <span class="btn a">A</span> or <kbd>Space</kbd> to start</p>
+  <div class="legend" id="legendTitle"></div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <h2>Paused</h2>
+  <div class="menu" id="pauseMenu"></div>
+  <div class="legend" id="legendPause"></div>
+</div>
+
+<div id="results" class="screen hidden">
+  <h2 id="resTitle">World clear!</h2>
+  <div id="resBody" class="res"></div>
+  <p class="blink">Press <span class="btn a">A</span> to return to the Mothership</p>
+</div>
+
+<div id="pad" class="pad-status"></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

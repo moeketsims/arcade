@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arcade</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="hub.css">
+</head>
+<body>
+<canvas id="bg"></canvas>
+<header>
+  <div class="logo">ARCADE</div>
+  <div class="right"><span id="padstate"></span><span id="clock"></span></div>
+</header>
+<main>
+  <div id="row" class="row"></div>
+  <div id="nojs">The Arcade has to be opened through its small web server, not as a file.<br>
+    Double-click <b>Play Arcade.cmd</b> in this folder (or run <b>python serve.py</b>), then use
+    <b>http://127.0.0.1:5173</b> in Chrome or Edge.</div>
+  <section id="info">
+    <div class="genre" id="gGenre"></div>
+    <h1 id="gTitle"></h1>
+    <p id="gDesc"></p>
+    <ul id="gFeat"></ul>
+    <div class="actions"><button id="play">Play</button><span id="gHint"></span></div>
+  </section>
+</main>
+<footer id="foot"></footer>
+<div id="testpanel" class="hidden"></div>
+<script type="module" src="src/hub.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frontline Ops</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="src/frontline/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game" tabindex="0"></canvas>
+<div id="hud" class="hidden"></div>
+<div id="menu" class="fl-screen hidden"></div>
+<div id="loadout" class="hidden"></div>
+<div id="loading" class="fl-screen hidden"><div class="fl-panel" style="text-align:center"><div class="fl-logo">DEPLOYING<b>...</b></div></div></div>
+<script type="module" src="src/frontline/main.js"></script>
+</body>
+</html>

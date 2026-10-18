@@ -1,0 +1,11 @@
+import { buildSaltworks, buildRange } from '../map.js';
+import { plotTopDown } from './raster.mjs';
+const OUT = process.argv[2];
+const t0 = performance.now();
+const m = buildSaltworks();
+console.log('saltworks boxes', m.level.boxes.length, 'decor', m.decor.length, 'spawns', m.spawns.length, 'nodes', m.nodes.length, (performance.now() - t0).toFixed(1) + 'ms');
+plotTopDown(OUT + '/map_salt.png', m, { scale: 9, cutY: 1.0 });
+plotTopDown(OUT + '/map_salt_up.png', m, { scale: 9, cutY: 5.2 });
+const r = buildRange();
+console.log('range boxes', r.level.boxes.length, 'targets', r.range.targets.length);
+plotTopDown(OUT + '/map_range.png', r, { scale: 8 });
