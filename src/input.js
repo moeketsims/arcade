@@ -28,7 +28,7 @@ export class Input {
   update() {
     const p = this.pad; p.update();
     this.move.x = p.lx; this.move.y = p.ly;
-    this.cam.x = p.rx + this.mdx * 0.02; this.cam.y = p.ry + this.mdy * 0.02; this.mdx = 0; this.mdy = 0;
+    this.cam.x = p.rx + (this.mdx + p.mdx) * 0.02; this.cam.y = p.ry + (this.mdy + p.mdy) * 0.02;   // p.mdx/mdy: touch drag-to-look this.mdx = 0; this.mdy = 0;
   }
   down(b) { return this.pad.down(b === 'MUSIC' ? 'SELECT' : b); }
   pressed(b) { return this.pad.pressed(b === 'MUSIC' ? 'SELECT' : b); }

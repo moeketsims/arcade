@@ -112,7 +112,7 @@ export class Game {
   }
   renderTitleLegend() {
     const g = b => this.pad.glyph(b), rows = [['Move', 'LS'], ['Look', 'RS'], ['Fire', 'R2'], ['Aim', 'L2'], ['Jump', 'A'], ['Build', 'B'], ['Reload / hold: open · pick up', 'X'], ['Pickaxe', 'Y'], ['Heal', 'UP'], ['Grenade', 'DOWN']];
-    $('legend').innerHTML = rows.map(([t, b]) => `<div>${b === 'LS' || b === 'RS' ? `<kbd>${b === 'LS' ? 'WASD' : 'Mouse'}</kbd>` : g(b)} ${t}</div>`).join('') + `<div style="grid-column:1/3;justify-content:center;opacity:.85">${g('TOUCH')} all controls &nbsp;·&nbsp; ${g('HOME')} back to the Arcade</div>`;
+    $('legend').innerHTML = rows.map(([t, b]) => `<div>${b === 'LS' || b === 'RS' ? `<kbd>${this.pad.touch ? (b === 'LS' ? 'Left stick' : 'Drag / right stick') : b === 'LS' ? 'WASD' : 'Mouse'}</kbd>` : g(b)} ${t}</div>`).join('') + `<div style="grid-column:1/3;justify-content:center;opacity:.85">${g('TOUCH')} all controls &nbsp;·&nbsp; ${g('HOME')} back to the Arcade</div>`;
   }
   renderPauseLegend() { const g = b => this.pad.glyph(b); $('pauseLegend').innerHTML = `<div>${g('A')} select</div><div>${g('START')} resume</div><div>${g('TOUCH')} controls</div><div>${g('HOME')} arcade</div>`; }
 
@@ -249,6 +249,7 @@ export class Game {
     const pad = this.pad, ctl = this.ctl; pad.update();
     if (this.opts.fps) { this.fpsAcc += dt; this.fpsN++; if (this.fpsAcc > 0.5) { $('pad').textContent = `${Math.round(this.fpsN / this.fpsAcc)} fps · ${this.renderer.info?.render?.calls ?? '?'} calls · ${Math.round((this.renderer.info?.render?.triangles ?? 0) / 1000)}k tris`; this.fpsAcc = 0; this.fpsN = 0; } }
     else $('pad').textContent = pad.connected ? `Controller: ${pad.id.slice(0, 40)}` : 'Keyboard + mouse';
+    if (pad.touch && !this._touchLegend && this.state === 'title') { this._touchLegend = true; this.renderTitleLegend(); }   // drawn before touch was detected
     if (pad.any() && this.sfx.ctx && this.sfx.ctx.state !== 'running') this.sfx.init();
     if (pad.pressed('HOME')) { goHome(); return; }
     if (pad.pressed('TOUCH') && this.state !== 'loading') { this.overlay.toggle(); this.sfx.play('ui'); }

@@ -5,10 +5,14 @@
 //   L1/R1 = bumpers  L2/R2 = triggers (analog in l2v/r2v)  L3/R3 = stick clicks
 //   UP/DOWN/LEFT/RIGHT = D-pad  SELECT = Create/View  START = Options/Menu  HOME = PS/Xbox  TOUCH = touchpad press
 // Sticks: lx, ly (left; ly > 0 = pushed up/forward), rx, ry (right; ry > 0 = pushed DOWN, like a mouse).
+// On a phone or tablet with no controller, the on-screen touch controls (touch.js) count as a connected pad
+// (kind 'touch'), and dragging on the game view feeds mdx/mdy like mouse-look.
+import { touchLayer } from './touch.js';
 export const BUTTONS = ['A', 'B', 'X', 'Y', 'L1', 'R1', 'L2', 'R2', 'SELECT', 'START', 'L3', 'R3', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'HOME', 'TOUCH'];
 const INDEX = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, L2: 6, R2: 7, SELECT: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15, HOME: 16, TOUCH: 17 };
 export const PS_NAME = { A: '✕', B: '○', X: '□', Y: '△', L1: 'L1', R1: 'R1', L2: 'L2', R2: 'R2', SELECT: 'Create', START: 'Options', L3: 'L3', R3: 'R3', UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→', HOME: 'PS', TOUCH: 'Touchpad' };
 export const XB_NAME = { A: 'A', B: 'B', X: 'X', Y: 'Y', L1: 'LB', R1: 'RB', L2: 'LT', R2: 'RT', SELECT: 'View', START: 'Menu', L3: 'LS', R3: 'RS', UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→', HOME: 'Xbox', TOUCH: 'Pad' };
+export const TOUCH_NAME = { A: 'A', B: 'B', X: 'X', Y: 'Y', L1: 'L1', R1: 'R1', L2: 'L2', R2: 'R2', SELECT: 'SELECT', START: 'MENU', L3: 'L3', R3: 'R3', UP: '▲', DOWN: '▼', LEFT: '◀', RIGHT: '▶', HOME: 'HOME', TOUCH: 'HELP' };
 const KEY_NICE = { Space: 'Space', ShiftLeft: 'Shift', ShiftRight: 'Shift', ControlLeft: 'Ctrl', ControlRight: 'Ctrl', AltLeft: 'Alt', Enter: 'Enter', Escape: 'Esc', Tab: 'Tab', Backquote: '`', Mouse0: 'Mouse L', Mouse1: 'Mouse M', Mouse2: 'Mouse R', WheelUp: 'Wheel ↑', WheelDown: 'Wheel ↓', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Backspace: 'Backspace' };
 export const niceKey = c => KEY_NICE[c] || c.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num ');
 
@@ -22,6 +26,7 @@ export class Pad {
    *   moveKeys: { up, down, left, right } codes for the left stick (default WASD)
    *   lookKeys: { up, down, left, right } codes for the right stick (default arrow keys)
    *   pointerLock: element — click it to lock the mouse; mouse motion then feeds mdx/mdy (for shooters)
+   *   touch:    false hides the on-screen controls until showTouch(true); touchLook: false = no drag-to-look
    */
   constructor(o = {}) {
     this.keymap = { ...BASE_KEYS, ...(o.keymap || {}) };
@@ -33,12 +38,16 @@ export class Pad {
     this.lx = 0; this.ly = 0; this.rx = 0; this.ry = 0; this.l2v = 0; this.r2v = 0;
     this.mdx = 0; this.mdy = 0; this._mdx = 0; this._mdy = 0;
     this.connected = false; this.id = ''; this.kind = 'keyboard'; this.gp = null; this.lastT = performance.now();
-    this.usingPad = false;
+    this.usingPad = false; this.touch = false;
+    this.tl = touchLayer();
+    if (this.tl) { if (o.touch === false) this.tl.want = false; if (o.touchLook === false) this.tl.look = false; }
+    // the browser follows every tap with a copy as mouse events: those must not press Mouse0 (fire, in the shooters)
+    const synth = () => this.tl?.active && this.tl.recentTouch;
     const block = new Set(['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backquote']);
     addEventListener('keydown', e => { if (block.has(e.code)) e.preventDefault(); this.keys.add(e.code); if (!e.repeat) this.tapped.add(e.code); this.usingPad = false; });
     addEventListener('keyup', e => this.keys.delete(e.code));
     addEventListener('blur', () => { this.keys.clear(); });
-    addEventListener('mousedown', e => { const c = 'Mouse' + e.button; this.keys.add(c); this.tapped.add(c); this.usingPad = false; });
+    addEventListener('mousedown', e => { if (synth()) return; const c = 'Mouse' + e.button; this.keys.add(c); this.tapped.add(c); this.usingPad = false; });
     addEventListener('mouseup', e => this.keys.delete('Mouse' + e.button));
     addEventListener('wheel', e => { this.tapped.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown'); }, { passive: true });
     addEventListener('contextmenu', e => e.preventDefault());
@@ -46,7 +55,9 @@ export class Pad {
     if (o.pointerLock) this.enablePointerLock(o.pointerLock);
   }
 
-  enablePointerLock(el) { el.addEventListener('click', () => { if (!document.pointerLockElement) el.requestPointerLock?.(); }); }
+  enablePointerLock(el) { el.addEventListener('click', () => { if (!document.pointerLockElement && !this.tl?.active) el.requestPointerLock?.(); }); }
+  /** Show or hide the on-screen touch controls on this page (they still appear only on touch devices without a pad). */
+  showTouch(on = true) { if (this.tl) this.tl.want = on; }
   get locked() { return !!document.pointerLockElement; }
 
   _key(codes) { return (codes || []).some(c => this.keys.has(c) || this.tapped.has(c)); }
@@ -56,8 +67,10 @@ export class Pad {
     this.prev = { ...this.held };
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
     const gp = pads.find(p => p && p.connected && p.mapping === 'standard') || pads.find(p => p && p.connected) || null;
-    this.gp = gp; this.connected = !!gp; this.id = gp ? gp.id : '';
-    this.kind = !gp ? 'keyboard' : /054c|dualsense|dualshock|wireless controller|playstation/i.test(gp.id) ? 'playstation' : /045e|xbox|xinput/i.test(gp.id) ? 'xbox' : 'generic';
+    this.tl?.sync(!!gp);
+    this.touch = !gp && !!this.tl?.active;
+    this.gp = gp; this.connected = !!gp || this.touch; this.id = gp ? gp.id : this.touch ? 'Touch controls' : '';
+    this.kind = this.touch ? 'touch' : !gp ? 'keyboard' : /054c|dualsense|dualshock|wireless controller|playstation/i.test(gp.id) ? 'playstation' : /045e|xbox|xinput/i.test(gp.id) ? 'xbox' : 'generic';
     // keyboard → sticks
     const k = (o, d) => (this._key(o[d]) ? 1 : 0);
     let lx = k(this.moveKeys, 'right') - k(this.moveKeys, 'left'), ly = k(this.moveKeys, 'up') - k(this.moveKeys, 'down');
@@ -81,6 +94,15 @@ export class Pad {
       }
       l2 = Math.max(l2, gp.buttons[6]?.value || 0); r2 = Math.max(r2, gp.buttons[7]?.value || 0);
     }
+    if (this.touch) {
+      const t = this.tl;
+      for (const b of BUTTONS) if (t.down(b)) this.held[b] = true;
+      t.endFrame();
+      if (t.down('L2')) l2 = 1; if (t.down('R2')) r2 = 1;
+      lx += t.sticks.L.x; ly -= t.sticks.L.y; rx += t.sticks.R.x; ry += t.sticks.R.y;
+      const [dx, dy] = t.takeLook(); this._mdx += dx * 1.6; this._mdy += dy * 1.6;   // small screens: a bit more turn per pixel
+      this.usingPad = true;
+    }
     const clamp = v => Math.max(-1, Math.min(1, v));
     const lm = Math.hypot(lx, ly); if (lm > 1) { lx /= lm; ly /= lm; }
     this.lx = lx; this.ly = ly; this.rx = clamp(rx); this.ry = clamp(ry); this.l2v = l2; this.r2v = r2;
@@ -101,14 +123,14 @@ export class Pad {
   wheel() { return (this.keys.has('WheelUp') ? 1 : 0); }
   any() { return BUTTONS.some(b => this.pressed(b)); }
   /** Name of a button for prompts: PS symbols on a PlayStation pad, letters otherwise. */
-  name(b) { return this.kind === 'playstation' ? PS_NAME[b] : XB_NAME[b]; }
+  name(b) { return this.kind === 'playstation' ? PS_NAME[b] : this.kind === 'touch' ? TOUCH_NAME[b] : XB_NAME[b]; }
   /** First keyboard key bound to a button, for prompts while playing on keyboard. */
   keyName(b) { const c = (this.keymap[b] || [])[0]; return c ? niceKey(c) : ''; }
   /** HTML glyph: shows the controller button when a pad is in use, the key otherwise. */
   glyph(b) {
     const pad = this.connected && (this.usingPad || !this.keymap[b]?.length);
     const cls = ['A', 'B', 'X', 'Y'].includes(b) ? `face ${b.toLowerCase()}` : 'shoulder';
-    if (pad || !this.keyName(b)) return `<span class="glyph ${cls}">${['A', 'B', 'X', 'Y'].includes(b) ? b : XB_NAME[b] === b ? b : (this.kind === 'playstation' ? PS_NAME[b] : b)}</span>`;
+    if (pad || !this.keyName(b)) return `<span class="glyph ${cls}">${['A', 'B', 'X', 'Y'].includes(b) ? b : this.kind === 'touch' ? TOUCH_NAME[b] : XB_NAME[b] === b ? b : (this.kind === 'playstation' ? PS_NAME[b] : b)}</span>`;
     return `<kbd>${this.keyName(b)}</kbd>`;
   }
   rumble(weak = 0.5, strong = 0.5, ms = 120) {

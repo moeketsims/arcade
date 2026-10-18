@@ -101,6 +101,6 @@ export class ControllerOverlay {
     this.labels.LS?.classList.toggle('on', Math.hypot(p.lx, p.ly) > 0.2); this.labels.RS?.classList.toggle('on', Math.hypot(p.rx, p.ry) > 0.2);
     this.labels.L3?.classList.toggle('on', p.down('L3')); this.labels.R3?.classList.toggle('on', p.down('R3'));
     this.trigL.setAttribute('width', 120 * p.l2v); this.trigR.setAttribute('width', 120 * p.r2v);
-    this.padLabel.textContent = p.connected ? `🎮 ${p.kind === 'playstation' ? 'PlayStation' : p.kind === 'xbox' ? 'Xbox' : 'Gamepad'} connected` : '⌨️ No controller — keyboard shown below';
+    this.padLabel.textContent = p.kind === 'touch' ? '👆 Touch controls — tap HELP to close' : p.connected ? `🎮 ${p.kind === 'playstation' ? 'PlayStation' : p.kind === 'xbox' ? 'Xbox' : 'Gamepad'} connected` : '⌨️ No controller — keyboard shown below';
   }
 }

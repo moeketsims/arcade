@@ -8,8 +8,11 @@ existing games.
 
 ## Play online
 
-https://moeketsims.github.io/arcade/ works on any device with a modern browser. Phones and iPads need a
-Bluetooth controller (DualSense or Xbox) paired to them; there are no on-screen touch controls yet.
+https://moeketsims.github.io/arcade/ works on any device with a modern browser. On a phone or iPad with no
+controller, on-screen touch controls appear: two sticks, the D-pad, A/B/X/Y, L1/L2/R1/R2, small L3/R3 buttons on
+the sticks (or tap a stick), and HOME / SELECT / HELP / MENU along the top. Drag anywhere on the game view to look
+around. Landscape gives the most room. Pair a Bluetooth controller (DualSense or Xbox) and the touch controls hide
+themselves as soon as it is used. On the home screen, tap a game once to see it and again to play.
 
 ## Run it
 
@@ -98,7 +101,8 @@ heartbeat sensor), 4 scorestreaks, sights and attachments.
 
 ## Code map
 
-`src/common/` shared by every game: `pad.js` (all controller buttons + keyboard/mouse), `overlay.js` (live controller
+`src/common/` shared by every game: `pad.js` (all controller buttons + keyboard/mouse), `touch.js` (on-screen touch
+controls that feed `pad.js`), `overlay.js` (live controller
 diagram), `humanoid.js` (jointed 3D people + animation library), `sfx.js` (synthesised sound), `arcade.css`.
 `src/hub.js` the Arcade home. `src/football/` Golazo (stadium, ball physics, players, AI, match engine).
 `src/` (top level) Starbolt. `src/royale/`, `src/frontline/` the two shooters. `serve.py` is a no-cache dev server.

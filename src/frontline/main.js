@@ -141,7 +141,7 @@ async function deploy(modeId) {
 // ---------------------------------------------------------------------------------------------------------------
 // pointer lock
 // ---------------------------------------------------------------------------------------------------------------
-function requestMouse() { try { const p = canvas.requestPointerLock?.(); p?.catch?.(() => {}); } catch { /* needs a user gesture */ } }
+function requestMouse() { if (ctl.pad.touch) return; try { const p = canvas.requestPointerLock?.(); p?.catch?.(() => {}); } catch { /* needs a user gesture */ } }
 function releaseMouse() { S.expectUnlock = true; try { document.exitPointerLock?.(); } catch { /* ignore */ } setTimeout(() => { S.expectUnlock = false; }, 300); }
 document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && S.name === 'playing' && !S.expectUnlock) openPause();    // Esc released the mouse: show the pause menu

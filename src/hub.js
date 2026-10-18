@@ -27,7 +27,7 @@ const GAMES = [
     icon: `<path d="M40 80c0-14 14-20 34-18h52c20-2 34 4 34 18l14 60c4 22-16 32-30 18l-22-24H78l-22 24c-14 14-34 4-30-18z" fill="#2b3550" stroke="#9fb0d8" stroke-width="4"/><circle cx="72" cy="104" r="12" fill="#9fb0d8"/><circle cx="140" cy="94" r="7" fill="#f2b705"/><circle cx="128" cy="106" r="7" fill="#2f7de1"/><circle cx="152" cy="106" r="7" fill="#e5383b"/><circle cx="140" cy="118" r="7" fill="#2fbf4f"/>` },
 ];
 
-const pad = new Pad({ keymap: { A: ['Enter', 'Space'], B: ['Backspace'], LEFT: ['ArrowLeft', 'KeyA'], RIGHT: ['ArrowRight', 'KeyD'], TOUCH: ['KeyT'] } });
+const pad = new Pad({ keymap: { A: ['Enter', 'Space'], B: ['Backspace'], LEFT: ['ArrowLeft', 'KeyA'], RIGHT: ['ArrowRight', 'KeyD'], TOUCH: ['KeyT'] }, touch: false, touchLook: false });   // touch: tap a tile; the on-screen pad shows only in the controller test
 const sfx = new Sfx();
 const overlay = new ControllerOverlay({ title: 'Controller test', pad, note: 'Press A to test rumble',
   map: { A: 'A button', B: 'B button', X: 'X button', Y: 'Y button', L1: 'Left bumper', R1: 'Right bumper', L2: 'Left trigger (analog)', R2: 'Right trigger (analog)', UP: 'Up', DOWN: 'Down', LEFT: 'Left', RIGHT: 'Right', LS: 'Left joystick', RS: 'Right joystick', L3: 'Left stick click', R3: 'Right stick click', SELECT: 'Create / View', START: 'Options / Menu', TOUCH: 'Touchpad click', HOME: 'PS / Xbox button' } });
@@ -41,8 +41,9 @@ GAMES.forEach((g, i) => {
   t.style.background = `linear-gradient(140deg, ${g.c1}, ${g.c2})`;
   t.innerHTML = `<svg viewBox="0 0 200 200">${g.icon}</svg><div class="tlabel"><div class="tname">${g.title}</div><div class="tgenre">${g.genre}</div></div>`;
   // mouse: hovering shows the game's details, one click opens it
-  t.onmouseenter = () => { if (sel !== i) { sel = i; render(); } };
-  t.onclick = () => { sel = i; render(); launch(); };
+  t.onmouseenter = () => { if (!pad.touch && sel !== i) { sel = i; render(); } };
+  // touch: the first tap shows the game's details, a second tap (or Play) opens it
+  t.onclick = () => { if (pad.touch && sel !== i) { sel = i; sfx.init(); sfx.play('ui'); render(); return; } sel = i; render(); launch(); };
   row.appendChild(t);
 });
 $('play').onclick = () => launch();
@@ -54,14 +55,15 @@ function render() {
   $('gFeat').innerHTML = g.feat.map(f => `<li>${f}</li>`).join('');
   $('play').textContent = g.page ? 'Play' : 'Open';
   $('gHint').innerHTML = `${pad.glyph('A')} ${g.page ? 'Play' : 'Open'}`;
-  $('foot').innerHTML = `<span>${pad.glyph('LEFT')}${pad.glyph('RIGHT')} or left stick: choose</span><span>${pad.glyph('A')} play</span><span>${pad.glyph('TOUCH')} controller test</span><span>In any game: ${pad.glyph('HOME')} / <kbd>\`</kbd> comes back here · ${pad.glyph('TOUCH')} / <kbd>Tab</kbd> shows its controls</span>`;
+  if (pad.touch) { $('gHint').textContent = ''; $('foot').innerHTML = `<span>Tap a game to see it, tap again or Play to start</span><span>In any game: <b>HOME</b> comes back here · <b>HELP</b> shows its controls · <b>MENU</b> pauses</span>`; }
+  else $('foot').innerHTML = `<span>${pad.glyph('LEFT')}${pad.glyph('RIGHT')} or left stick: choose</span><span>${pad.glyph('A')} play</span><span>${pad.glyph('TOUCH')} controller test</span><span>In any game: ${pad.glyph('HOME')} / <kbd>\`</kbd> comes back here · ${pad.glyph('TOUCH')} / <kbd>Tab</kbd> shows its controls</span>`;
   bgColors = [g.c1, g.c2];
 }
 
 function launch() {
   if (launching) return;
   const g = GAMES[sel]; sfx.init(); sfx.play('start'); pad.rumble(0.4, 0.6, 180);
-  if (!g.page) { overlay.show(); $('testpanel').classList.remove('hidden'); return; }
+  if (!g.page) { overlay.show(); pad.showTouch(true); $('testpanel').classList.remove('hidden'); return; }
   launching = true; localStorage.setItem('arcade-last', g.id);
   document.body.classList.add('leaving'); setTimeout(() => { location.href = g.page; }, 300);
 }
@@ -85,7 +87,7 @@ function loop(t) {
     overlay.update();
     $('testpanel').textContent = `left stick  x ${pad.lx.toFixed(2)}  y ${pad.ly.toFixed(2)}     right stick  x ${pad.rx.toFixed(2)}  y ${pad.ry.toFixed(2)}     L2 ${pad.l2v.toFixed(2)}  R2 ${pad.r2v.toFixed(2)}\n${pad.connected ? pad.id.slice(0, 90) : 'no controller detected — press any button on it to wake it up'}`;
     if (pad.pressed('A')) { pad.rumble(1, 1, 400); sfx.init(); sfx.play('select'); }
-    if (pad.pressed('TOUCH') || pad.pressed('B') || pad.pressed('START') || pad.pressed('HOME')) { overlay.hide(); $('testpanel').classList.add('hidden'); sfx.play('back'); }
+    if (pad.pressed('TOUCH') || pad.pressed('B') || pad.pressed('START') || pad.pressed('HOME')) { overlay.hide(); pad.showTouch(false); $('testpanel').classList.add('hidden'); sfx.play('back'); }
   } else {
     let dx = 0;
     if (pad.pressed('LEFT')) dx = -1; if (pad.pressed('RIGHT')) dx = 1;
@@ -98,7 +100,7 @@ function loop(t) {
     if (pad.pressed('TOUCH')) { sel = GAMES.length - 1; render(); launch(); }
   }
   $('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  $('padstate').textContent = pad.connected ? `🎮 ${pad.kind === 'playstation' ? 'DualSense' : pad.kind === 'xbox' ? 'Xbox controller' : 'Controller'}` : '⌨️ Keyboard';
+  $('padstate').textContent = pad.touch ? '👆 Touch' : pad.connected ? `🎮 ${pad.kind === 'playstation' ? 'DualSense' : pad.kind === 'xbox' ? 'Xbox controller' : 'Controller'}` : '⌨️ Keyboard';
   const sig = `${pad.connected}|${pad.usingPad}|${pad.kind}`; if (sig !== lastSig) { lastSig = sig; render(); }
   drawBg(t);
   requestAnimationFrame(loop);
