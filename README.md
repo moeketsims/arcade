@@ -39,6 +39,7 @@ Buttons are named by position, as on Xbox: **A** = bottom (PS ✕), **B** = righ
 | Golazo Football | 11-a-side 3D football: matches, penalty shootout, free-kick challenge | `football.html` |
 | Storm Royale | Battle royale: bus drop, loot, building, storm, 30 rivals | `royale.html` |
 | Frontline Ops | First-person military shooter: loadouts, scorestreaks, firing range | `frontline.html` |
+| Dash Derby | Kart racer: 6 tracks, drifting and mini-turbos, items, cups, time trial, replays | `kart.html` |
 
 ## Golazo Football controls
 

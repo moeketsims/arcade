@@ -1,0 +1,133 @@
+/* Dash Derby: HUD, menus, results. Touch layout notes: the on-screen pad covers both bottom corners, so on touch
+   (body.touch-ui) the HUD keeps to the top and the middle of the screen. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f1e; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+#game { display: block; width: 100vw; height: 100vh; }
+.fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 30; }
+.fade.on { opacity: 1; }
+
+/* ---- HUD ---- */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; font-weight: 800; text-shadow: 0 2px 0 #0008, 0 0 8px #0006; }
+#itemSlot { position: absolute; left: 22px; top: 18px; display: flex; align-items: center; gap: 10px; }
+.ibox { width: 92px; height: 92px; border-radius: 20px; background: #0b1020b8; border: 4px solid #ffffffd0; box-shadow: 0 0 0 3px #0006, inset 0 0 18px #46f0ff55; position: relative; display: flex; align-items: center; justify-content: center; }
+.ibox svg { width: 70px; height: 70px; }
+#itemUses { position: absolute; right: 4px; bottom: 0; font-size: 22px; }
+#itemName { font-size: 15px; opacity: .9; max-width: 180px; }
+.ibox.roll svg { animation: roll .09s steps(1) infinite; }
+@keyframes roll { 50% { transform: scale(.9) rotate(8deg); } }
+#placeBox { position: absolute; right: 26px; bottom: 18px; font-style: italic; line-height: 1; }
+#place { font-size: 96px; font-weight: 900; background: linear-gradient(#fff, #ffd166 60%, #ff8a2b); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #0009); }
+#placeSuf { font-size: 36px; vertical-align: top; margin-left: 2px; }
+#placeBox.p1 #place { background-image: linear-gradient(#fff6c4, #ffd166 50%, #f2a900); }
+#placeBox.bump { animation: bump .35s ease-out; }
+@keyframes bump { 40% { transform: scale(1.25); } }
+#lapBox { position: absolute; right: 26px; top: 18px; text-align: right; }
+#lapText { font-size: 30px; font-style: italic; }
+#timeText { font-size: 24px; font-variant-numeric: tabular-nums; opacity: .95; }
+#lapTimes { font-size: 15px; opacity: .8; font-variant-numeric: tabular-nums; line-height: 1.35; }
+#lapTimes .best { color: #7ddf3a; } #lapTimes .worse { color: #ff8a8a; }
+#ranks { position: absolute; left: 22px; top: 130px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+#ranks div { display: flex; align-items: center; gap: 6px; background: #0b102088; padding: 2px 10px 2px 4px; border-radius: 12px; min-width: 120px; transition: transform .2s; }
+#ranks div b { width: 20px; text-align: center; }
+#ranks div i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px #fff6; }
+#ranks div.me { background: #ffd166cc; color: #1b1d22; text-shadow: none; }
+#minimap { position: absolute; left: 18px; bottom: 14px; width: 190px; height: 190px; opacity: .95; }
+#speedo { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); text-align: center; line-height: 1; }
+#speed { font-size: 34px; font-style: italic; font-variant-numeric: tabular-nums; }
+#speedo small { font-size: 12px; opacity: .8; }
+#driftBar { width: 160px; height: 8px; border-radius: 5px; background: #0007; margin-top: 6px; overflow: hidden; border: 1px solid #fff5; }
+#driftBar i { display: block; height: 100%; width: 0; background: #46a8ff; transition: background .1s; }
+#center { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-size: clamp(60px, 14vw, 150px); font-weight: 900; font-style: italic; letter-spacing: 2px; white-space: nowrap; text-align: center; -webkit-text-stroke: 3px #1b1d22; }
+#center.pop { animation: pop .6s ease-out; }
+#center small { display: block; font-size: .28em; -webkit-text-stroke: 0; letter-spacing: 4px; }
+@keyframes pop { 0% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); } }
+#msg { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font-size: clamp(26px, 5vw, 44px); font-weight: 900; font-style: italic; white-space: nowrap; }
+#msg.warn { color: #ff5a5a; animation: blink .5s steps(1) infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+#hint { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); font-size: 15px; font-weight: 600; opacity: .9; display: flex; gap: 14px; white-space: nowrap; }
+#hint span { display: flex; gap: 6px; align-items: center; background: #0009; padding: 4px 10px; border-radius: 14px; }
+#replayTag { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); background: #0b1020d0; padding: 8px 18px; border-radius: 14px; display: flex; gap: 14px; align-items: center; font-size: 16px; pointer-events: auto; }
+#replayTag b { color: #ff5a5a; animation: blink 1s steps(1) infinite; }
+
+/* touch: everything important at the top, clear of the on-screen sticks and buttons */
+body.touch-ui #minimap { left: auto; right: 12px; top: 112px; bottom: auto; width: 120px; height: 120px; }
+body.touch-ui #placeBox { right: 140px; top: 10px; bottom: auto; }
+body.touch-ui #place { font-size: 64px; } body.touch-ui #placeSuf { font-size: 24px; }
+body.touch-ui #lapBox { top: 10px; right: 12px; } body.touch-ui #lapText { font-size: 22px; } body.touch-ui #timeText { font-size: 17px; } body.touch-ui #lapTimes { display: none; }
+body.touch-ui #itemSlot { left: 12px; top: 44px; } body.touch-ui .ibox { width: 70px; height: 70px; } body.touch-ui .ibox svg { width: 52px; height: 52px; } body.touch-ui #itemName { display: none; }
+body.touch-ui #ranks { display: none; }
+body.touch-ui #speedo { bottom: auto; top: 46px; } body.touch-ui #speed { font-size: 24px; }
+body.touch-ui #hint { display: none; }
+body.touch-ui #center { top: 34%; }
+/* label the touch buttons with what they do in this game */
+body.touch-ui .tc [data-b]::after { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 1px; font-size: 9px; letter-spacing: .5px; color: #fffd; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+body.touch-ui .tc [data-b=A]::after { content: 'GAS'; } body.touch-ui .tc [data-b=B]::after { content: 'BRAKE'; }
+body.touch-ui .tc [data-b=X]::after { content: 'DRIFT'; } body.touch-ui .tc [data-b=Y]::after { content: 'ITEM'; }
+body.touch-ui .tc [data-b=R1]::after { content: 'DRIFT'; } body.touch-ui .tc [data-b=L1]::after { content: 'ITEM'; }
+body.touch-ui .tc [data-b=R2]::after { content: 'GAS'; } body.touch-ui .tc [data-b=L2]::after { content: 'BRAKE'; }
+body.touch-ui .tc [data-b=R3]::after { content: 'LOOK'; } body.touch-ui .tc [data-b=L3]::after { content: 'HORN'; }
+@media (orientation: portrait) { body.touch-ui #placeBox { right: auto; left: 92px; top: 44px; } body.touch-ui #minimap { top: 96px; } }
+
+/* ---- screens and menus ---- */
+#screen { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; padding: 28px 40px; overflow: auto; background: linear-gradient(90deg, #0b1020f0 0%, #0b1020c8 38%, #0b102000 62%); }
+#screen.full { background: radial-gradient(ellipse at 50% 30%, #2a1f5ae8, #070a18f2); align-items: center; }
+#screen.dim { background: #070a18cc; align-items: center; justify-content: center; }
+.logo { font-weight: 900; font-style: italic; font-size: clamp(54px, 9vw, 120px); line-height: .9; letter-spacing: 2px; margin: 4vh 0 2vh;
+  background: linear-gradient(100deg, #ff7eb6, #ffd166 45%, #46f0ff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 0 #0008); }
+.logo small { display: block; font-size: .22em; letter-spacing: 10px; color: #fff; -webkit-text-fill-color: #fff; font-style: normal; margin-top: 8px; opacity: .85; }
+.blink { animation: blink 1.2s steps(1) infinite; font-size: 20px; margin-top: 4vh; }
+.scr-title { font-size: clamp(28px, 4vw, 44px); font-weight: 900; font-style: italic; margin: 0 0 4px; }
+.scr-sub { opacity: .8; margin: 0 0 16px; font-size: 16px; }
+.mlist { display: flex; flex-direction: column; gap: 8px; width: min(440px, 100%); }
+.mitem { padding: 12px 18px; border-radius: 14px; background: #ffffff14; font-size: 20px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 2px solid transparent; transition: background .1s, transform .1s; }
+.mitem small { font-weight: 600; opacity: .75; font-size: 14px; }
+.mitem.sel { background: linear-gradient(90deg, #ffd166, #ff9f6b); color: #1b1d22; transform: translateX(6px); }
+.mitem.sel small { opacity: .8; }
+.mitem.off { opacity: .45; }
+.mgrid { display: grid; gap: 10px; width: min(560px, 100%); }
+.card { border-radius: 16px; background: #ffffff14; padding: 8px; text-align: center; cursor: pointer; border: 3px solid transparent; font-weight: 800; font-size: 15px; position: relative; }
+.card svg { display: block; margin: 0 auto; }
+.card.sel { border-color: #ffd166; background: #ffd16633; transform: translateY(-3px); }
+.card .tag { font-size: 11px; opacity: .75; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.card canvas { width: 100%; height: auto; border-radius: 10px; background: #0005; }
+.card .rec { font-size: 12px; opacity: .85; font-weight: 600; }
+.trophy { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-left: 4px; vertical-align: -1px; }
+.trophy.g1 { background: #ffd166; } .trophy.g2 { background: #cfd8e3; } .trophy.g3 { background: #d08b4f; }
+.panel { margin-top: 14px; width: min(440px, 100%); background: #0b1020b0; border-radius: 16px; padding: 12px 16px; }
+.panel h3 { margin: 0 0 6px; font-size: 22px; }
+.panel p { margin: 0 0 8px; opacity: .85; font-size: 15px; }
+.stat { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 3px 0; }
+.stat .bar { height: 10px; border-radius: 6px; background: #ffffff1c; overflow: hidden; }
+.stat .bar i { display: block; height: 100%; background: linear-gradient(90deg, #46f0ff, #7ddf3a); }
+.mhint { margin-top: auto; padding-top: 16px; display: flex; gap: 18px; flex-wrap: wrap; opacity: .85; font-size: 15px; align-items: center; }
+.mhint span { display: flex; gap: 6px; align-items: center; }
+.backbtn { position: fixed; top: 12px; right: 14px; z-index: 25; padding: 8px 14px; border-radius: 12px; background: #ffffff22; font-weight: 800; cursor: pointer; display: none; }
+body.touch-ui .backbtn, body.touchy .backbtn { display: block; }
+
+/* results, standings */
+table.res { border-collapse: collapse; width: min(640px, 100%); font-size: 18px; margin-top: 6px; }
+table.res td { padding: 6px 10px; }
+table.res tr { background: #ffffff0d; } table.res tr:nth-child(odd) { background: #ffffff16; }
+table.res tr.me { background: #ffd166; color: #1b1d22; font-weight: 800; }
+table.res td.pos { font-weight: 900; font-style: italic; width: 48px; text-align: center; font-size: 22px; }
+table.res td.time { font-variant-numeric: tabular-nums; text-align: right; }
+table.res td.pts { text-align: right; font-weight: 900; }
+table.res td.port { width: 40px; padding: 2px; }
+.podium { display: flex; align-items: flex-end; gap: 14px; margin: 14px 0; }
+.podium div { text-align: center; font-weight: 900; }
+.podium .blk { width: 120px; border-radius: 12px 12px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font-size: 40px; font-style: italic; color: #1b1d22; }
+.cup { font-size: 64px; filter: drop-shadow(0 6px 0 #0007); }
+
+@media (max-width: 720px), (max-height: 520px) {
+  #screen { padding: 14px 16px; background: linear-gradient(180deg, #0b1020c8 0%, #0b1020e8 45%); }
+  .mitem { padding: 9px 14px; font-size: 17px; }
+  .scr-title { font-size: 26px; } .scr-sub { margin-bottom: 8px; font-size: 14px; }
+  .mgrid { gap: 6px; } .card { font-size: 13px; padding: 5px; }
+  .panel { padding: 8px 12px; margin-top: 8px; } .panel p { display: none; }
+  table.res { font-size: 15px; } table.res td { padding: 3px 6px; }
+  .mhint { font-size: 13px; gap: 10px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #screen { flex-direction: column; flex-wrap: wrap; align-content: flex-start; column-gap: 20px; }
+  .logo { margin: 1vh 0; }
+}
