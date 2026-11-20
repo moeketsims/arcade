@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sparkplug GP</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="src/kart/kart.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud" class="hidden"></div>
+<div id="menu" class="k-screen hidden"></div>
+<div id="pause" class="k-overlay hidden"></div>
+<div id="replayBar" class="k-replay hidden"></div>
+<div id="toast" class="toast2"></div>
+<div id="fps" class="k-fps hidden"></div>
+<script type="module" src="src/kart/main.js"></script>
+</body>
+</html>
