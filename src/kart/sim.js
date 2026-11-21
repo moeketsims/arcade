@@ -40,6 +40,7 @@ class Kart {
     this.ti = 0; this.tf = 0; this.lat = 0; this.cp = CHECKPOINTS - 1; this.lap = 0; this.lapStart = 0; this.lapTimes = []; this.bestLap = Infinity;
     this.finished = false; this.finishTime = 0; this.place = idx + 1; this.dist = 0;
     this.offroad = false; this.wrongT = 0; this.fallT = 0; this.safeI = 0; this.bumpT = 0;
+    this.topLap = 0;   // the highest lap this kart has started (see crossLine)
     this.input = { ...NO_INPUT }; this.prevDrift = false; this.prevItem = false;
     this.startCharge = 0; this.startBoost = false;
     // AI personality
@@ -296,6 +297,10 @@ export class Race {
 
   crossLine(k) {
     k.lap++;
+    // Reversed back over the line and across it again: still the same lap, not a new one. Without this the second
+    // crossing logged a lap of a few seconds, which became the best lap and could be saved as a time-trial record.
+    if (k.lap <= k.topLap) return;
+    k.topLap = k.lap;
     if (k.lap >= 2) {
       const lt = this.t - k.lapStart; k.lapTimes.push(lt); k.bestLap = Math.min(k.bestLap, lt); k.lapStart = this.t;
       this.emit('lap', { k: k.idx, lap: k.lap, time: lt });

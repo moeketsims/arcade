@@ -428,9 +428,11 @@ function showResults() {
   let pointsCol = '';
   if (race.mode === 'gp') {
     S.gp.adds = S.gp.adds || [];
-    S.gp.adds[S.gp.index] = race.finishOrder.map(k => [k.racer.id, POINTS[k.place - 1]]);
-    for (const [id, pt] of S.gp.adds[S.gp.index]) S.gp.points.set(id, (S.gp.points.get(id) || 0) + pt);
-    S.gp.results[S.gp.index] = race.finishOrder.map(k => k.racer.id);
+    if (!S.gp.adds[S.gp.index]) {   // this screen is shown again after a replay: award the race's points once
+      S.gp.adds[S.gp.index] = race.finishOrder.map(k => [k.racer.id, POINTS[k.place - 1]]);
+      for (const [id, pt] of S.gp.adds[S.gp.index]) S.gp.points.set(id, (S.gp.points.get(id) || 0) + pt);
+      S.gp.results[S.gp.index] = race.finishOrder.map(k => k.racer.id);
+    }
     pointsCol = 'pts';
   }
   const rows = (tt ? [me] : race.finishOrder).map(k => `<tr class="${k === me ? 'me' : ''}"><td>${tt ? '' : ord(k.place)}</td><td><i style="background:${k.racer.color}"></i>${k.racer.name}</td><td>${k.kart.name}</td><td>${k.projected ? '<span class="dim">' + fmt(k.finishTime) + '*</span>' : fmt(k.finishTime)}</td><td>${fmt(k.bestLap)}</td>${pointsCol ? `<td>+${POINTS[k.place - 1]}</td>` : ''}</tr>`).join('');

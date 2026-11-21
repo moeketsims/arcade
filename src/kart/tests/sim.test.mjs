@@ -147,6 +147,29 @@ section('time trial, replay and determinism');
   console.log(`  time trial: ${a.human.finishTime.toFixed(2)} s, laps ${a.human.lapTimes.map(t => t.toFixed(2)).join(' / ')}`);
 }
 
+section('going back over the line and crossing it again is not a new lap');
+{
+  const r = new Race({ track: 2, cls: 1, mode: 'tt', players: [{ racer: 3, kart: 1 }], seed: 9, countdown: 0.01 });
+  const k = r.human; k.autopilot = true;
+  ok(k.lap === 0 && k.topLap === 0 && k.lapTimes.length === 0 && k.bestLap === Infinity, 'a kart starts on lap 0 with no lap times');
+  toGo(r);
+  const until = (cond, sec, inp = NO_INPUT) => { for (let i = 0; i < sec / DT && !cond(); i++) r.step([inp]); return cond(); };
+  const lap2s = () => r.events.filter(e => e.type === 'lap' && e.lap === 2).length;
+  ok(until(() => k.lap === 1, 20) && k.topLap === 1 && k.lapTimes.length === 0, 'the first crossing starts lap 1 and logs no lap time');
+  ok(until(() => k.lap === 2, 200) && k.lapTimes.length === 1 && lap2s() === 1, 'a full lap logs one lap time');
+  const lap1 = k.lapTimes[0];
+  for (let n = 0; n < 2; n++) {
+    k.speed = 0; k.boostT = 0; k.drift = 0; k.autopilot = false;   // stopped just past the line
+    ok(until(() => k.lap === 1, 8, { ...NO_INPUT, brake: 1 }), 'reversing takes the kart back over the line');
+    k.autopilot = true;
+    ok(until(() => k.lap === 2, 30), 'driving on crosses the line again');
+  }
+  ok(k.topLap === 2 && k.lapTimes.length === 1 && k.bestLap === lap1 && lap2s() === 1, `crossing again logs no lap (lap times: ${k.lapTimes.map(t => t.toFixed(2)).join(' / ')})`);
+  ok(until(() => r.state === 'done', 400), 'the race still finishes');
+  ok(k.lapTimes.length === 3 && Math.min(...k.lapTimes) > 15 && k.bestLap === Math.min(...k.lapTimes), `three real laps (${k.lapTimes.map(t => t.toFixed(2)).join(' / ')})`);
+  ok(Math.abs(k.lapTimes.reduce((a, b) => a + b, 0) - k.finishTime) < 1e-6, 'the lap times add up to the finish time');
+}
+
 section('every racer and kart combination drives');
 {
   let worst = Infinity;

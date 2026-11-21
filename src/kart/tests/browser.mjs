@@ -65,6 +65,12 @@ const FAKE_PAD = id => `(() => {
 
 const BTN = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, L2: 6, R2: 7, SELECT: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15, HOME: 16, TOUCH: 17 };
 const buttons = (...names) => { const b = []; for (const n of names) b[BTN[n]] = 1; return b; };
+// Centre of an element and whether that point is inside the window, so a real click or tap can reach it.
+const spot = (p, sel, scroll = false) => p.eval(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return null; if (${scroll}) e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2; return { x, y, seen: b.width > 0 && x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight }; })()`);
+// A real mouse click on the centre of an element. It does not scroll: an element below the fold is not clicked.
+const click = async (p, sel) => { const r = await spot(p, sel); if (!r?.seen) return false; const at = { x: r.x, y: r.y, button: 'left', clickCount: 1 }; await p.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: r.x, y: r.y }); await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at }); await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at }); await sleep(200); return true; };
+// A finger tap: scrolls the element into view first, as a person would. Chrome follows the touch with the click.
+const tapOn = async (p, sel) => { const r = await spot(p, sel, true); if (!r?.seen) return false; await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x, y: r.y, id: 2 }] }); await sleep(50); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(300); return true; };
 
 // ---- tests ----------------------------------------------------------------------------------------------------------------
 const tests = {
@@ -161,9 +167,11 @@ const tests = {
   async tracks(p) {
     for (let t = 0; t < 6; t++) {
       await p.goto(BASE + `/kart.html?quick=1&mode=vs&track=${t}&auto=1&speed=3`); await p.until(`window.__kart?.S.race?.state === 'race'`, 20000);
-      await sleep(2500 + t * 200);
-      const st = await p.eval(`(() => { const r = window.__kart.S.race; return { name: r.def.name, sp: r.human.speed, d: r.human.raceDist }; })()`);
-      ok(st.d > 30, `${st.name}: renders and races (${st.d.toFixed(0)} m in)`);
+      // wait for the distance itself, not for a fixed time: software rendering can be slow, and Skyway is the last to load.
+      // Same 30 m mark as before, and it has to come within 15 s of race time, so a kart that crawls still fails.
+      const moved = await p.until(`window.__kart.S.race.human.raceDist > 30`, 45000);
+      const st = await p.eval(`(() => { const r = window.__kart.S.race; return { name: r.def.name, sp: r.human.speed, d: r.human.raceDist, t: r.t }; })()`);
+      ok(moved && st.d > 30 && st.t < 15, `${st.name}: renders and races (${st.d.toFixed(0)} m in after ${st.t.toFixed(1)} s of the race)`);
       await p.shot(`20-track-${t}`);
     }
     ok(p.errors.length === 0, `no console errors on the six tracks (${p.errors.slice(0, 3).join(' | ')})`);
@@ -297,6 +305,122 @@ const tests = {
     await sleep(200); await p.shot('55-phone-pause');
     await tap('#pause .k-it'); ok(await p.eval(`window.__kart.S.name`) === 'race', 'phone: tap Resume');
     ok(p.errors.length === 0, `no console errors on the phone (${p.errors.slice(0, 3).join(' | ')})`);
+    await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  },
+
+  async hub1280(p) {
+    // desktop at 1280 x 720 (the size this runner sets): six tiles on one row, so Play is on screen without scrolling
+    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 6 && !!document.querySelector('.tile.sel')`, 8000);
+    const L = await p.eval(`(() => { const t = [...document.querySelectorAll('.tile')]; return { w: innerWidth, h: innerHeight, tops: t.map(e => e.offsetTop), right: Math.max(...t.map(e => e.offsetLeft + e.offsetWidth)), size: t[0].offsetWidth, main: document.querySelector('main').clientWidth }; })()`);
+    ok(L.w === 1280 && L.h === 720, `hub 1280: the window is 1280 x 720 (${L.w} x ${L.h})`);
+    ok(new Set(L.tops).size === 1 && L.right <= L.main - 48, `hub 1280: all six tiles sit on one row (tile ${L.size} px, row tops ${[...new Set(L.tops)].join(' / ')})`);
+    const seen = [];
+    for (let i = 0; i < 6; i++) {
+      seen.push(await p.eval(`(() => { const b = document.getElementById('play').getBoundingClientRect(); return { title: document.getElementById('gTitle').textContent, top: Math.round(b.top), bottom: Math.round(b.bottom), y: scrollY }; })()`));
+      await p.key('ArrowRight'); await sleep(150);
+    }
+    const low = seen.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+    ok(new Set(seen.map(s => s.title)).size === 6 && seen.every(s => s.y === 0 && s.top >= 0 && s.bottom <= L.h), `hub 1280: Play is on screen for every tile without scrolling (lowest for ${low.title}: bottom edge at ${low.bottom} of ${L.h} px)`);
+    await p.key('ArrowLeft'); await sleep(150);   // wraps round to the last tile
+    ok(await p.eval(`document.getElementById('gTitle').textContent + '|' + document.getElementById('play').textContent`) === 'Controller Test|Open', 'hub 1280: Controller Test is the last tile and its button reads Open');
+    await p.shot('60-hub-1280');
+    ok(await click(p, '#play') && await p.until(`!document.getElementById('testpanel').classList.contains('hidden')`, 3000), 'hub 1280: clicking the button opens the Controller Test');
+    await p.key('Backspace');
+    ok(await p.until(`document.getElementById('testpanel').classList.contains('hidden')`, 3000), 'hub 1280: B / Backspace closes the Controller Test');
+    await p.key('ArrowLeft'); await sleep(150);
+    ok(await p.eval(`document.getElementById('gTitle').textContent`) === 'Sparkplug GP', 'hub 1280: Sparkplug GP is selected');
+    ok(await click(p, '#play') && await p.until(`location.pathname.endsWith('kart.html')`, 8000), 'hub 1280: clicking Play opens kart.html');
+    ok(await p.until(`window.__kart && document.querySelector('.k-logo')`, 15000), 'hub 1280: the title screen appears');
+    ok(p.errors.length === 0, `no console errors from the hub at 1280 (${p.errors.slice(0, 3).join(' | ')})`);
+  },
+
+  async hubtouch(p) {
+    // phone in portrait with touch: the hub keeps its 150 px tiles, the first tap shows a game, Play starts it
+    await p.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: 'portraitPrimary', angle: 0 } });
+    await p.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 6`, 8000);
+    await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 5, id: 1 }] }); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    ok(await p.until(`document.getElementById('foot').textContent.includes('Tap a game')`, 4000), 'phone hub: touch is detected');
+    const T = await p.eval(`(() => { const t = [...document.querySelectorAll('.tile')].map(e => e.getBoundingClientRect()); return { w: innerWidth, sizes: [...new Set(t.map(b => Math.round(b.width) + ' x ' + Math.round(b.height)))], left: Math.min(...t.map(b => b.left)), right: Math.max(...t.map(b => b.right)) }; })()`);
+    ok(T.sizes.join() === '150 x 150' && T.left >= 0 && T.right <= T.w, `phone hub: six 150 px tiles inside the ${T.w} px screen (${T.sizes.join(', ')})`);
+    ok(await tapOn(p, '.tile:nth-child(5)') && await p.until(`document.getElementById('gTitle').textContent === 'Sparkplug GP'`, 3000), 'phone hub: the first tap on the Sparkplug GP tile shows its details');
+    await sleep(600);
+    ok(await p.eval(`!location.pathname.endsWith('kart.html') && !document.body.classList.contains('leaving')`), 'phone hub: one tap does not start the game');
+    await p.shot('61-hub-phone');
+    ok(await tapOn(p, '#play') && await p.until(`location.pathname.endsWith('kart.html')`, 8000), 'phone hub: tapping Play opens kart.html');
+    ok(await p.until(`window.__kart && document.querySelector('.k-logo')`, 15000), 'phone hub: the title screen appears');
+    ok(await p.until(`window.__kart.pad.touch === true`, 4000), 'phone hub: the game opens in touch mode');
+    ok(p.errors.length === 0, `no console errors from the hub on a phone (${p.errors.slice(0, 3).join(' | ')})`);
+    await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  },
+
+  async gpreplay(p) {
+    // Grand Prix points are awarded once per race: the results come back after a replay, and a restart takes them back
+    await p.goto(BASE + '/kart.html?quick=1&mode=gp&cup=0&laps=1&auto=1&speed=5'); await p.until(`window.__kart?.S.name === 'race'`, 15000);
+    const up = `window.__kart.S.name === 'menu' && window.__kart.S.menu.id === 'results'`;
+    const gp = () => p.eval(`(() => { const g = window.__kart.S.gp, me = window.__kart.S.race.human.racer.id; return { total: [...g.points.values()].reduce((a, b) => a + b, 0), me: g.points.get(me) || 0, top: Math.max(0, ...g.points.values()), races: g.results.length, adds: (g.adds || []).filter(Boolean).length }; })()`);
+    const pick = async label => {
+      const want = await p.eval(`window.__kart.S.menu.items.findIndex(i => i.label === ${JSON.stringify(label)})`);
+      for (let i = 0; i < 8 && want >= 0 && await p.eval(`window.__kart.S.sel`) !== want; i++) { await p.key('ArrowDown'); await sleep(150); }
+      if (want < 0 || await p.eval(`window.__kart.S.sel`) !== want) return false;
+      await p.key('Enter'); return true;
+    };
+    const replay = async () => { if (!await pick('Watch replay') || !await p.until(`window.__kart.S.name === 'replay'`, 3000)) return false; await sleep(700); await p.key('Backspace'); return p.until(up, 3000); };
+    ok(await p.until(up, 120000), 'GP replay: race 1 finishes');
+    const a = await gp();
+    ok(a.total === 58 && a.top === 15 && a.races === 1, `GP replay: race 1 awards 58 points, 15 to the winner (${JSON.stringify(a)})`);
+    ok(await replay() && await replay(), 'GP replay: watch the replay twice and come back to the results each time');
+    const b = await gp();
+    ok(b.total === 58 && b.top === 15 && b.me === a.me && b.races === 1, `GP replay: leaving the replay does not award the points again (${JSON.stringify(b)})`);
+    await p.shot('63-gp-after-replay');
+    ok(await pick('Restart this race') && await p.until(`window.__kart.S.name === 'race'`, 5000), 'GP replay: Restart this race starts race 1 again');
+    const c = await gp();
+    ok(c.total === 0 && c.races === 0 && c.adds === 0, `GP replay: the restart takes the points of race 1 back (${JSON.stringify(c)})`);
+    ok(await p.until(up, 120000) && await replay(), 'GP replay: the restarted race finishes, replay and back');
+    const d = await gp();
+    ok(d.total === 58 && d.top === 15 && d.races === 1, `GP replay: the restarted race awards its points once (${JSON.stringify(d)})`);
+    ok(await pick('Standings') && await p.until(`window.__kart.S.menu.id === 'standings'`, 3000), 'GP replay: standings after race 1');
+    const shown = await p.eval(`[...document.querySelectorAll('.k-res tr td:last-child b')].reduce((s, e) => s + +e.textContent, 0)`);
+    ok(shown === 58, `GP replay: the standings table adds up to 58 (${shown})`);
+    await sleep(300); await p.key('Enter');
+    ok(await p.until(`window.__kart.S.name === 'race' && window.__kart.S.race.def.id === 'pier' && window.__kart.S.race.state === 'race'`, 20000), 'GP replay: race 2 starts (Saltspray Pier)');
+    await p.eval(`window.__kart.S.race.old = true`);
+    await p.key('Escape'); await sleep(200); await p.key('ArrowDown'); await sleep(200);
+    const paused = await p.eval(`window.__kart.S.name + ' ' + window.__kart.S.pauseSel`);
+    await p.key('Enter');
+    ok(paused === 'pause 1' && await p.until(`window.__kart.S.name === 'race' && !window.__kart.S.race.old`, 5000), `GP replay: pause, then Restart race, in race 2 (${paused})`);
+    const e = await gp();
+    ok(e.total === 58 && e.races === 1 && e.adds === 1, `GP replay: a restart from the pause menu leaves the points of race 1 alone (${JSON.stringify(e)})`);
+    ok(await p.until(up, 120000) && await replay(), 'GP replay: race 2 finishes, replay and back');
+    const f = await gp();
+    ok(f.total === 116 && f.races === 2 && f.adds === 2, `GP replay: 116 points after two races and a replay (${JSON.stringify(f)})`);
+    ok(await pick('Restart this race') && await p.until(`window.__kart.S.name === 'race'`, 5000), 'GP replay: Restart this race in race 2');
+    const g = await gp();
+    ok(g.total === 58 && g.races === 1 && g.adds === 1, `GP replay: that restart takes back the points of race 2 only (${JSON.stringify(g)})`);
+    ok(p.errors.length === 0, `no console errors in the Grand Prix replay and restart checks (${p.errors.slice(0, 3).join(' | ')})`);
+  },
+
+  async gptouch(p) {
+    // the same on a phone in landscape: DONE in the replay bar brings the results back without adding the points again
+    await p.send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: 'landscapePrimary', angle: 90 } });
+    await p.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await p.goto(BASE + '/kart.html?quick=1&mode=gp&cup=0&laps=1&auto=1&speed=5'); await p.until(`window.__kart?.S.name === 'race'`, 15000);
+    await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 5, id: 1 }] }); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    ok(await p.until(`window.__kart.pad.touch === true`, 4000), 'phone GP: touch mode is on');
+    const up = `window.__kart.S.name === 'menu' && window.__kart.S.menu.id === 'results'`;
+    const total = () => p.eval(`[...window.__kart.S.gp.points.values()].reduce((a, b) => a + b, 0)`);
+    const tapItem = async (label, done) => { for (let n = 0; n < 3; n++) { const i = await p.eval(`window.__kart.S.menu.items.findIndex(it => it.label === ${JSON.stringify(label)})`); await tapOn(p, `#menu .k-it[data-i="${i}"]`); if (await p.until(done, 1500)) return true; } return false; };
+    ok(await p.until(up, 120000), 'phone GP: race 1 finishes');
+    const first = await total();
+    ok(await tapItem('Watch replay', `window.__kart.S.name === 'replay'`), 'phone GP: tap Watch replay, tap again to confirm');
+    await sleep(800); await p.shot('62-phone-replay');
+    ok(await tapOn(p, '#replayBar [data-r=exit]') && await p.until(up, 4000), 'phone GP: DONE leaves the replay back to the results');
+    const again = await total();
+    ok(first === 58 && again === 58, `phone GP: 58 points before the replay and after it (${first}, ${again})`);
+    ok(await tapItem('Standings', `window.__kart.S.menu.id === 'standings'`), 'phone GP: standings open by touch');
+    const shown = await p.eval(`[...document.querySelectorAll('.k-res tr td:last-child b')].reduce((s, e) => s + +e.textContent, 0)`);
+    ok(shown === 58, `phone GP: the standings table adds up to 58 (${shown})`);
+    ok(p.errors.length === 0, `no console errors in the Grand Prix on a phone (${p.errors.slice(0, 3).join(' | ')})`);
     await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
   },
 };
