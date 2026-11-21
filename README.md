@@ -40,6 +40,7 @@ Buttons are named by position, as on Xbox: **A** = bottom (PS ✕), **B** = righ
 | Storm Royale | Battle royale: bus drop, loot, building, storm, 30 rivals | `royale.html` |
 | Frontline Ops | First-person military shooter: loadouts, scorestreaks, firing range | `frontline.html` |
 | Sparkplug GP | Kart racer: 6 tracks, 3 cups, time trial with ghosts, 8 racers, 4 karts, items, replays | `kart.html` |
+| Velocity Divide | 3D action adventure: 6 characters on two sides, 9 missions, 3 bosses, ranks | `velocity.html` |
 
 ## Golazo Football controls
 
@@ -118,6 +119,14 @@ ghost of your best run, kept in the browser). Every race can be watched back as 
 cameras. Items: Turbo Can, Triple Turbo, Goo Blob, Bounce Puck, Seeker Wasp, Decoy Crystal, Prism Shield,
 Thunderhead (racers further back get the stronger ones).
 
+## Velocity Divide controls
+
+A jump (press again in the air: homing dash or air dash for runners, double jump for seekers; hold to glide or hover) ·
+B (or X, R2) action: roll and dive, dig and punch, or hold to lock on and release to fire · L1 / R1 (or L2) quick move:
+burst, scan or thruster dash · left stick or D-pad move · right stick camera · Y or R3 camera behind you · Create
+music · Options pause. Keyboard: WASD, Space, J or F, Shift or Q / E, arrow keys for the camera (or click the game and
+use the mouse), C, M, Esc. Progress and best ranks are kept in the browser.
+
 ## Testing shortcuts
 
 - `starbolt.html?world=N` (0–5) and `?unlock=1`.
@@ -132,6 +141,7 @@ Thunderhead (racers further back get the stronger ones).
   Browser tests (server running, Chrome or Edge installed, Node 22+): `node src/kart/tests/browser.mjs`
   (hub, the four other games, menus, a race start to finish, results, replay, restart, Grand Prix, time trial,
   keyboard, emulated DualSense and Xbox pads, multi-touch and phone layouts; screenshots go to the temp folder).
+- `velocity.html?quick=1&m=d1..d4|u1..u4|x1&c=kite|mossa|pallet|vesper|quill|ogre` goes straight into a mission. Extra flags: `&auto=1` (autopilot), `&speed=N`, `&seed=N`. Headless: `node src/velocity/tests/sim.test.mjs`. Browser: `node src/velocity/tests/browser.mjs`.
 
 ## Code map
 

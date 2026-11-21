@@ -310,24 +310,24 @@ const tests = {
 
   async hub1280(p) {
     // desktop at 1280 x 720 (the size this runner sets): six tiles on one row, so Play is on screen without scrolling
-    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 6 && !!document.querySelector('.tile.sel')`, 8000);
+    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 7 && !!document.querySelector('.tile.sel')`, 8000);
     const L = await p.eval(`(() => { const t = [...document.querySelectorAll('.tile')]; return { w: innerWidth, h: innerHeight, tops: t.map(e => e.offsetTop), right: Math.max(...t.map(e => e.offsetLeft + e.offsetWidth)), size: t[0].offsetWidth, main: document.querySelector('main').clientWidth }; })()`);
     ok(L.w === 1280 && L.h === 720, `hub 1280: the window is 1280 x 720 (${L.w} x ${L.h})`);
-    ok(new Set(L.tops).size === 1 && L.right <= L.main - 48, `hub 1280: all six tiles sit on one row (tile ${L.size} px, row tops ${[...new Set(L.tops)].join(' / ')})`);
+    ok(new Set(L.tops).size === 1 && L.right <= L.main - 48, `hub 1280: all seven tiles sit on one row (tile ${L.size} px, row tops ${[...new Set(L.tops)].join(' / ')})`);
     const seen = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       seen.push(await p.eval(`(() => { const b = document.getElementById('play').getBoundingClientRect(); return { title: document.getElementById('gTitle').textContent, top: Math.round(b.top), bottom: Math.round(b.bottom), y: scrollY }; })()`));
       await p.key('ArrowRight'); await sleep(150);
     }
     const low = seen.reduce((a, b) => (b.bottom > a.bottom ? b : a));
-    ok(new Set(seen.map(s => s.title)).size === 6 && seen.every(s => s.y === 0 && s.top >= 0 && s.bottom <= L.h), `hub 1280: Play is on screen for every tile without scrolling (lowest for ${low.title}: bottom edge at ${low.bottom} of ${L.h} px)`);
+    ok(new Set(seen.map(s => s.title)).size === 7 && seen.every(s => s.y === 0 && s.top >= 0 && s.bottom <= L.h), `hub 1280: Play is on screen for every tile without scrolling (lowest for ${low.title}: bottom edge at ${low.bottom} of ${L.h} px)`);
     await p.key('ArrowLeft'); await sleep(150);   // wraps round to the last tile
     ok(await p.eval(`document.getElementById('gTitle').textContent + '|' + document.getElementById('play').textContent`) === 'Controller Test|Open', 'hub 1280: Controller Test is the last tile and its button reads Open');
     await p.shot('60-hub-1280');
     ok(await click(p, '#play') && await p.until(`!document.getElementById('testpanel').classList.contains('hidden')`, 3000), 'hub 1280: clicking the button opens the Controller Test');
     await p.key('Backspace');
     ok(await p.until(`document.getElementById('testpanel').classList.contains('hidden')`, 3000), 'hub 1280: B / Backspace closes the Controller Test');
-    await p.key('ArrowLeft'); await sleep(150);
+    await p.key('ArrowLeft'); await sleep(150); await p.key('ArrowLeft'); await sleep(150);
     ok(await p.eval(`document.getElementById('gTitle').textContent`) === 'Sparkplug GP', 'hub 1280: Sparkplug GP is selected');
     ok(await click(p, '#play') && await p.until(`location.pathname.endsWith('kart.html')`, 8000), 'hub 1280: clicking Play opens kart.html');
     ok(await p.until(`window.__kart && document.querySelector('.k-logo')`, 15000), 'hub 1280: the title screen appears');
@@ -338,11 +338,11 @@ const tests = {
     // phone in portrait with touch: the hub keeps its 150 px tiles, the first tap shows a game, Play starts it
     await p.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: 'portraitPrimary', angle: 0 } });
     await p.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 6`, 8000);
+    await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length === 7`, 8000);
     await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 5, id: 1 }] }); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     ok(await p.until(`document.getElementById('foot').textContent.includes('Tap a game')`, 4000), 'phone hub: touch is detected');
     const T = await p.eval(`(() => { const t = [...document.querySelectorAll('.tile')].map(e => e.getBoundingClientRect()); return { w: innerWidth, sizes: [...new Set(t.map(b => Math.round(b.width) + ' x ' + Math.round(b.height)))], left: Math.min(...t.map(b => b.left)), right: Math.max(...t.map(b => b.right)) }; })()`);
-    ok(T.sizes.join() === '150 x 150' && T.left >= 0 && T.right <= T.w, `phone hub: six 150 px tiles inside the ${T.w} px screen (${T.sizes.join(', ')})`);
+    ok(T.sizes.join() === '150 x 150' && T.left >= 0 && T.right <= T.w, `phone hub: seven 150 px tiles inside the ${T.w} px screen (${T.sizes.join(', ')})`);
     ok(await tapOn(p, '.tile:nth-child(5)') && await p.until(`document.getElementById('gTitle').textContent === 'Sparkplug GP'`, 3000), 'phone hub: the first tap on the Sparkplug GP tile shows its details');
     await sleep(600);
     ok(await p.eval(`!location.pathname.endsWith('kart.html') && !document.body.classList.contains('leaving')`), 'phone hub: one tap does not start the game');
