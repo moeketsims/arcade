@@ -39,6 +39,7 @@ Buttons are named by position, as on Xbox: **A** = bottom (PS ✕), **B** = righ
 | Golazo Football | 11-a-side 3D football: matches, penalty shootout, free-kick challenge | `football.html` |
 | Storm Royale | Battle royale: bus drop, loot, building, storm, 30 rivals | `royale.html` |
 | Frontline Ops | First-person military shooter: loadouts, scorestreaks, firing range | `frontline.html` |
+| Sparkplug GP | Kart racer: 6 tracks, 3 cups, time trial with ghosts, 8 racers, 4 karts, items, replays | `kart.html` |
 
 ## Golazo Football controls
 
@@ -95,6 +96,28 @@ sprint) · R1 lethal (hold to cook) · L1 tactical · D-pad ↑ → ← scorestr
 scoreboard. 21 guns, 5 knives, 4 lethals (frag, sticky, throwing knife, mine), 4 tacticals (flash, smoke, stun,
 heartbeat sensor), 4 scorestreaks, sights and attachments.
 
+## Sparkplug GP controls
+
+| Button | Racing |
+|---|---|
+| **A** or **R2** | Accelerate (R2 is analog) |
+| **B** or **L2** | Brake, then reverse |
+| Left stick / D-pad ← → | Steer |
+| **R1** (or **Y**) | Hop; hold while steering to drift. Sparks go blue, orange, violet: let go for a bigger boost each time. In the air off a ramp: trick (boost on landing) |
+| **L1** or **X** | Use item. Hold to trail a Goo Blob or Bounce Puck behind you as a shield, release to fire. Hold ↑ to throw ahead, ↓ to fire behind |
+| **R3** / right stick ↓ | Look behind |
+| Create · Options · Touchpad · PS | Minimap on/off · Pause · Controls · Arcade |
+
+Start boost: press the throttle just after **2** leaves the screen (too early floods the engine). Keyboard: W/↑ go,
+S/↓ brake, A D / ← → steer, Space/Shift drift, E item (Q fires behind), C look behind, M minimap, Esc pause. On
+touch screens the on-screen buttons are relabelled GAS, BRAKE, DRIFT and ITEM, and auto-accelerate is on (Options).
+
+Modes: **Grand Prix** (Petal, Comet and Grand Cups at Rookie 50 cc, Pro 100 cc or Legend 150 cc; points
+15-12-10-8-6-4-2-1, trophies for the top three), **Single Race**, **Time Trial** (three Turbo Cans, records and a
+ghost of your best run, kept in the browser). Every race can be watched back as a replay with trackside and chase
+cameras. Items: Turbo Can, Triple Turbo, Goo Blob, Bounce Puck, Seeker Wasp, Decoy Crystal, Prism Shield,
+Thunderhead (racers further back get the stronger ones).
+
 ## Testing shortcuts
 
 - `starbolt.html?world=N` (0–5) and `?unlock=1`.
@@ -103,6 +126,12 @@ heartbeat sensor), 4 scorestreaks, sights and attachments.
   Extra flags: `&bots=N`, `&storm=0`, `&god=1`, `&seed=N`, `&range=1` (a ring of every item), `&fps=1`.
   Headless tests: `node src/royale/tools/t_features.mjs`, `t_pad.mjs`, `t_smoke.mjs bus 300`.
 - `frontline.html?mode=range|tdm|ffa&diff=recruit|regular|veteran` goes straight into a match.
+- `kart.html?quick=1&mode=vs|tt|gp&track=0..5&cup=0..2&racer=0..7&kart=0..3&cls=0..2` goes straight into a race.
+  Extra flags: `&laps=N`, `&cpu=N`, `&auto=1` (your kart drives itself), `&speed=N` (fast-forward), `&fps=1`.
+  Headless tests: `node src/kart/tests/sim.test.mjs` (full races on every track, drifting, items, laps).
+  Browser tests (server running, Chrome or Edge installed, Node 22+): `node src/kart/tests/browser.mjs`
+  (hub, the four other games, menus, a race start to finish, results, replay, restart, Grand Prix, time trial,
+  keyboard, emulated DualSense and Xbox pads, multi-touch and phone layouts; screenshots go to the temp folder).
 
 ## Code map
 
@@ -110,4 +139,6 @@ heartbeat sensor), 4 scorestreaks, sights and attachments.
 controls that feed `pad.js`), `overlay.js` (live controller
 diagram), `humanoid.js` (jointed 3D people + animation library), `sfx.js` (synthesised sound), `arcade.css`.
 `src/hub.js` the Arcade home. `src/football/` Golazo (stadium, ball physics, players, AI, match engine).
-`src/` (top level) Starbolt. `src/royale/`, `src/frontline/` the two shooters. `serve.py` is a no-cache dev server.
+`src/` (top level) Starbolt. `src/royale/`, `src/frontline/` the two shooters. `src/kart/` Sparkplug GP (`data.js` racers, karts,
+tracks and items; `track.js` spline tracks; `sim.js` the race simulation, CPU drivers and items, no Three.js;
+`view.js` 3D scenes and cameras; `hud.js`, `audio.js`, `main.js` menus and race flow). `serve.py` is a no-cache dev server.
