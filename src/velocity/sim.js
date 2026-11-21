@@ -221,7 +221,8 @@ export class Sim {
     for (const sh of this.shards) if (!sh.got && !sh.buried && near(sh, 1.8, 2.2)) this.take(sh);
     for (const sp of lv.springs) if (hyp(sp.x - p.x, sp.z - p.z) < 1.5 && p.y - sp.y < 1.2 && p.y - sp.y > -1.5 && (p.vy <= 2 || p.homing === sp)) { p.vy = sp.v; p.cut = true; p.homing = null; p.airDash = false; p.airJumps = 0; p.stomp = false; this.ev('spring', sp); }
     if (p.ground) for (const d of lv.pads) if (Math.abs(d.x - p.x) < 2.4 && Math.abs(d.z - p.z) < 2.4 && Math.abs(d.y - p.y) < 1) { if (hyp(p.vx, p.vz) < d.v - 1) this.ev('pad', d); p.vx = d.dx * d.v; p.vz = d.dz * d.v; p.fx = d.dx; p.fz = d.dz; }
-    lv.checks.forEach((c, i) => { if (i !== this.checkId && hyp(c.x - p.x, c.z - p.z) < 3.5 && Math.abs(c.y - p.y) < 3) { this.checkId = i; this.check = { x: c.x, y: c.y + 0.1, z: c.z, yaw: c.yaw }; this.ev('check', c); } });
+    // a mech hall checkpoint (hw) counts anywhere across its hall, up to catwalk height, so the catwalk route banks it too
+    lv.checks.forEach((c, i) => { if (i !== this.checkId && (c.hw ? Math.abs(c.x - p.x) < c.hw && p.z < c.z + 3.5 && p.z > c.zEnd && p.y - c.y > -3 && p.y - c.y < 4.5 : hyp(c.x - p.x, c.z - p.z) < 3.5 && Math.abs(c.y - p.y) < 3)) { this.checkId = i; this.check = { x: c.x, y: c.y + 0.1, z: c.z, yaw: c.yaw }; this.ev('check', c); } });
     for (const h of lv.hazards) if (p.x + p.r > h.x0 && p.x - p.r < h.x1 && p.y + p.h > h.y0 && p.y < h.y1 && p.z + p.r > h.z0 && p.z - p.r < h.z1) this.hurt(p.x + p.vx, p.z + p.vz);
     for (const e of this.enemies) {
       if (!e.alive || hyp(e.x - p.x, e.y - cy, e.z - p.z) > e.r + 0.8) continue;

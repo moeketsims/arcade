@@ -66,6 +66,25 @@ for (const id of ['pallet', 'ogre']) {
   s = fresh(mid); run(s, 1, { ...fwd, dash: true }); ok(speed(s) >= st.dash - 1 && s.p.inv > 0, `${c.name}: thruster dash (${speed(s).toFixed(1)} m/s, briefly safe)`);
 }
 
+console.log('== mech: the catwalk over the first pit');
+for (const id of ['pallet', 'ogre']) {
+  const c = charById(id), m = missionById(c.mission), s = new Sim(m, c, 1), bot = new Bot(s), cw = s.lv.solids.find(b => b.y0 === 3.4 && b.y1 === 4), max = Math.round(480 / DT); let n = 0, k = 0;
+  while (!(s.p.ground && s.p.dead <= 0 && s.p.z < cw.z1 + 4) && n++ < max) { s.step(bot.input()); s.events.length = 0; }   // the autopilot plays up to the hall in front of the pit
+  const cp = { ...s.check }, r0 = s.retries;
+  Object.assign(s.p, { x: 3.3, y: 4.05, z: (cw.z0 + cw.z1) / 2, vx: 0, vy: 0, vz: 0 }); run(s, 20);
+  const stood = s.p.ground && Math.abs(s.p.y - 4) < 0.05;
+  while (s.p.dead <= 0 && k++ < 600) s.step({ ...idle, x: 1, jump: true });   // jump and hover sideways, over the 5 m side wall
+  const fell = s.p.dead > 0 && s.p.x > 6.5 && s.p.y < s.lv.killY; run(s, 120); s.events.length = 0;
+  const p = s.p, safe = [[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]].every(([dx, dz]) => s.floorAt(p.x + dx, p.z + dz, p.y, 1) > -1e8);
+  ok(stood && fell && s.retries === r0 + 1 && p.dead <= 0 && p.ground && safe && Math.hypot(p.x - cp.x, p.z - cp.z) < 0.01 && p.hearts === c.stats.hearts && p.fuel === c.stats.hover,
+    `${c.name}: jumping off the catwalk over the side wall is a fall (stood ${stood}, fell ${fell}), then a respawn on solid ground at the last checkpoint with full hearts and hover`);
+  bot.respawned(); n = 0; while (!s.done && n++ < max) { s.step(bot.input()); s.events.length = 0; }
+  ok(s.done === 'win', `${c.name}: after that fall the mission is still cleared (no softlock; ${s.results().time} s, retries ${s.retries})`);
+  const s2 = new Sim(m, c, 1), cw2 = s2.lv.solids.find(b => b.y0 === 3.4 && b.y1 === 4), far = s2.lv.checks.findIndex(q => Math.abs(q.z - (cw2.z0 + 1)) < 0.01);
+  Object.assign(s2.p, { x: 3.3, y: 4.05, z: cw2.z0 + 6, vx: 0, vy: 0, vz: 0 }); run(s2, 10); const before = s2.checkId; run(s2, 70, fwd);
+  ok(far >= 0 && before !== far && s2.checkId === far && s2.p.dead <= 0, `${c.name}: crossing the pit on the catwalk banks the checkpoint of the hall beyond it (checkpoint ${s2.checkId}, wanted ${far})`);
+}
+
 console.log('== autopilot clears every mission with every character allowed on it');
 const combos = []; for (const m of MISSIONS) for (const c of CHARS) if (m.char ? c.id === m.char : m.side === 'both' || c.side === m.side) combos.push([m, c]);
 for (const [m, c] of combos) {

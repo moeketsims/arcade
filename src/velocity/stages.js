@@ -109,7 +109,7 @@ function works(theme, plan) {
   const walls = (len, hw) => { box(lv, -hw - 1.5, -hw, -2, 5, z - len, z, 1); box(lv, hw, hw + 1.5, -2, 5, z - len, z, 1); };
   const floor = (len, hw, k) => { box(lv, -hw, hw, -2, 0, z - len, z, k); walls(len, hw); z -= len; lv.route.push({ x: 0, y: 0, z }); };
   for (const [kind, len, hw, foes] of plan) {
-    if (kind === 'hall') { lv.checks.push({ x: 0, y: 0, z: z - 2, yaw: 0 }); for (let i = 0; i < 4; i++) lv.sparks.push({ x: i % 2 ? 2 : -2, y: 1, z: z - len * (i + 0.5) / 4 }); floor(len, W, 0); }
+    if (kind === 'hall') { lv.checks.push({ x: 0, y: 0, z: z - 2, yaw: 0, hw: W, zEnd: z - len }); for (let i = 0; i < 4; i++) lv.sparks.push({ x: i % 2 ? 2 : -2, y: 1, z: z - len * (i + 0.5) / 4 }); floor(len, W, 0); }
     else if (kind === 'pit') {
       walls(len, W); box(lv, 1.6, W, 3.4, 4, z - len - 3, z + 3, 2); lv.hearts.push({ x: 3.3, y: 5, z: z - len / 2 });
       for (let i = 0; i < 4; i++) lv.sparks.push({ x: 3.3, y: 5, z: z + 2 - (len + 4) * i / 3 });

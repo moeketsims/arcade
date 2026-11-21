@@ -41,6 +41,43 @@ const HUD_CLASH = `(() => { const box = (e, n) => { const r = e.getBoundingClien
   const hud = [...document.querySelectorAll('.vd-tl, .vd-obj, .vd-meter, .vd-boss, #toast')].filter(e => e.getBoundingClientRect().width > 0).map(e => box(e, e.id || e.className)), tc = [...document.querySelectorAll('.tc.on [data-b], .tc.on .tc-stick')].map(e => box(e, e.dataset.b || 'stick')), bad = [];
   hud.forEach((a, i) => { if (a.l < 0 || a.r > innerWidth || a.t < 0 || a.b > innerHeight) bad.push(a.n + ' off screen'); for (const b of tc) if (hit(a, b)) bad.push(a.n + ' over ' + b.n); for (const b of hud.slice(i + 1)) if (hit(a, b)) bad.push(a.n + ' over ' + b.n); });
   return { n: hud.length, bad }; })()`;
+// Portrait selector: card text may sit above the pinned Play button or be hidden behind it and its 8 px rim, never beside it, below it or on top of it.
+const PLAY_BAR = `(() => { const panel = document.querySelector('.vd-panel'), go = document.getElementById('vdGo'), card = document.querySelector('.vd-card'); if (!panel || !go || !card) return null;
+  const pr = panel.getBoundingClientRect(), g = go.getBoundingClientRect(), cov = { l: g.left - 8, r: g.right + 8, t: g.top - 8, b: g.bottom + 8 }, bad = [], w = document.createTreeWalker(card, NodeFilter.SHOW_TEXT); let lines = 0, hidden = 0;
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (go.contains(n) || !n.textContent.trim()) continue; const rg = document.createRange(), txt = n.textContent.trim().slice(0, 24); rg.selectNodeContents(n);
+    for (const r of rg.getClientRects()) {
+      const t = Math.max(r.top, pr.top), b = Math.min(r.bottom, pr.bottom); if (r.width < 1 || b - t < 1) continue; lines++; if (b <= cov.t + 1) continue; hidden++;
+      const y0 = Math.max(t, g.top), y1 = Math.min(b, g.bottom);
+      if (r.left < cov.l - 1 || r.right > cov.r + 1) bad.push(txt + ': beside the button'); else if (b > cov.b + 1) bad.push(txt + ': below the button');
+      else if (y1 - y0 > 1 && document.elementFromPoint((Math.max(r.left, g.left) + Math.min(r.right, g.right)) / 2, (y0 + y1) / 2) !== go) bad.push(txt + ': drawn over the button');
+    }
+  }
+  return { bad, lines, hidden, w: Math.round(g.width), h: Math.round(g.height), on: g.left >= 0 && g.right <= innerWidth && g.top >= pr.top - 1 && g.bottom <= innerHeight, max: panel.scrollHeight - panel.clientHeight, top: Math.round(panel.scrollTop) }; })()`;
+// Touch contrast, measured on a real screenshot (WCAG contrast ratio): the label against its button, the button against the scene just outside it, the stick disc against the scene.
+const CONTRAST = `async url => {
+  const img = new Image(); img.src = url; await img.decode();
+  const cv = document.createElement('canvas'), k = img.naturalWidth / innerWidth; cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0); const px = cx.getImageData(0, 0, cv.width, cv.height).data;
+  const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lum = (x, y) => { const X = Math.round(x * k), Y = Math.round(y * k); if (X < 0 || Y < 0 || X >= cv.width || Y >= cv.height) return -1; const i = (Y * cv.width + X) * 4; return 0.2126 * lin(px[i]) + 0.7152 * lin(px[i + 1]) + 0.0722 * lin(px[i + 2]); };
+  const pct = (a, q) => { a = a.filter(v => v >= 0).sort((m, n) => m - n); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * q))] : -1; };
+  const grid = (l, t, r, b, keep) => { const o = []; for (let y = t; y <= b; y += 0.5) for (let x = l; x <= r; x += 0.5) if (!keep || keep(x, y)) o.push(lum(x, y)); return o; };
+  const cr = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), r2 = v => Math.round(v * 100) / 100, out = { btns: [], sticks: [] };
+  for (const e of document.querySelectorAll('.tc.on .tc-face [data-b], .tc.on .tc-sh [data-b], .tc.on .tc-dpad [data-b]')) {
+    const r = e.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(e);
+    const t = rg.getBoundingClientRect(), mx = (r.left + r.right) / 2, my = (r.top + r.bottom) / 2, hw = r.width * 0.3, hh = r.height * 0.3;
+    const label = pct(grid(t.left, t.top, t.right, t.bottom), 0.93);
+    let fill = pct(grid(mx - hw, my - hh, mx + hw, my + hh, (x, y) => x < t.left || x > t.right || y < t.top || y > t.bottom), 0.5); if (fill < 0) fill = pct(grid(mx - hw, my - hh, mx + hw, my + hh), 0.2);
+    const around = pct([...grid(r.left - 6, my - hh, r.left - 4, my + hh), ...grid(r.right + 4, my - hh, r.right + 6, my + hh), ...grid(mx - hw, r.top - 6, mx + hw, r.top - 4), ...grid(mx - hw, r.bottom + 4, mx + hw, r.bottom + 6)], 0.5);
+    out.btns.push({ b: e.dataset.b, bg: r2(around), text: r2(cr(label, fill)), edge: r2(cr(fill, around)) });
+  }
+  for (const e of document.querySelectorAll('.tc.on .tc-stick')) {
+    const r = e.getBoundingClientRect(), mx = (r.left + r.right) / 2, my = (r.top + r.bottom) / 2, R = r.width / 2, disc = [], outside = [];
+    for (let a = 20; a <= 160; a += 4) { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); disc.push(lum(mx + c * R * 0.78, my + s * R * 0.78)); outside.push(lum(mx + c * (R + 6), my + s * (R + 6))); }
+    out.sticks.push({ b: e.dataset.stick, bg: r2(pct(outside, 0.5)), edge: r2(cr(pct(disc, 0.5), pct(outside, 0.5))) });
+  }
+  return out; }`;
 const tests = {
   async hub(p) {
     await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length >= 7`, 8000);
@@ -112,6 +149,42 @@ const tests = {
       ok(p.errors.length === 0, `phone ${name}: no console errors (${p.errors.slice(0, 2).join(' | ')})`);
       await p.goto(`${BASE}/velocity.html?quick=1&m=u4&c=ogre`); const up = await p.until(PLAY, 15000) && await p.until(`!!document.querySelector('.tc.on') && !!document.querySelector('.vd-boss')`, 5000); await sleep(300);
       hc = await p.eval(HUD_CLASH); ok(up && hc.n >= 5 && hc.bad.length === 0 && p.errors.length === 0, `phone ${name}: the widest HUD (Ogre-9 with the boss bar, ${hc.n} parts) is clear too ${hc.bad.join('; ')} ${p.errors.slice(0, 1).join('')}`); await p.shot(`32-${name}-boss`);
+    }
+    await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  },
+  async playbar(p) {   // portrait selector at two phone sizes: the pinned Play button against the card text, unscrolled and scrolled to the bottom
+    for (const [w, h] of [[390, 844], [360, 740]]) {
+      await p.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true }); await p.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      await p.goto(BASE + '/velocity.html'); await p.until(`!!document.querySelector('.vd-logo')`, 15000);
+      await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 4, y: 4, id: 1 }] }); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(300);
+      await tapOn(p, '.vd-it[data-i="0"]'); const open = await p.until(`!!document.getElementById('vdGo')`, 4000);
+      for (const state of ['top', 'bottom']) {
+        await p.eval(`(() => { const e = document.querySelector('.vd-panel'); e.scrollTop = ${state === 'top' ? '0' : 'e.scrollHeight'}; return true; })()`); await sleep(250);
+        const r = open ? await p.eval(PLAY_BAR) : null;
+        ok(!!r && r.bad.length === 0 && r.lines > 0 && r.on && r.h >= 44 && r.max > 20 && (state === 'top' ? r.top === 0 : r.top >= r.max - 1 && r.hidden === 0),
+          `portrait ${w} x ${h}, selector scrolled to the ${state}: Play button ${r ? `${r.w} x ${r.h} px, on screen ${r.on}, ${r.lines} text lines in view, ${r.hidden} behind the bar, scroll ${r.top} of ${r.max}` : 'missing'}; no card text beside, below or over it ${r ? r.bad.join('; ') : ''}`);
+        await p.shot(`40-portrait-selector-${w}x${h}-${state}`);
+      }
+      await p.eval(`(() => { document.querySelector('.vd-panel').scrollTop = 0; return true; })()`); await sleep(250);
+      const t = await tapOn(p, '#vdGo'); ok(!!t && t.in && await p.until(`document.querySelector('.vd-panel h2')?.textContent === 'Sunspire Causeway'`, 3000), `portrait ${w} x ${h}: the pinned Play button takes a tap and opens the briefing`);
+      ok(p.errors.length === 0, `portrait ${w} x ${h}: no console errors (${p.errors.slice(0, 2).join(' | ')})`);
+    }
+    await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  },
+  async contrast(p) {   // bright stage (Bastion Lumen): every touch control must stand out from the scene behind it, and its label from the control
+    await p.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { sessionStorage.setItem('arcade-touch', '1'); } catch (e) { /* storage blocked */ }` });
+    for (const [w, h, name] of [[844, 390, 'landscape'], [740, 360, 'landscape'], [390, 844, 'portrait']]) {
+      await p.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true }); await p.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      await p.goto(`${BASE}/velocity.html?quick=1&m=u4&c=ogre`);
+      const up = await p.until(PLAY, 15000) && await p.until(`!!document.querySelector('.tc.on') && !!document.querySelector('.vd-boss') && document.querySelector('.tc [data-b=A]').textContent === 'JUMP'`, 5000); await sleep(700);
+      const png = (await p.send('Page.captureScreenshot', { format: 'png' })).data, c = up ? await p.eval(`(${CONTRAST})(${JSON.stringify('data:image/png;base64,' + png)})`) : { btns: [], sticks: [] };
+      const lit = c.btns.filter(b => b.bg >= 0.5), litS = c.sticks.filter(s => s.bg >= 0.5), low = (a, key) => (a.length ? Math.min(...a.map(b => b[key])) : 0), tag = `${name} ${w} x ${h}, Bastion Lumen`;
+      ok(c.btns.length === 12 && lit.length >= 8, `${tag}: ${lit.length} of ${c.btns.length} buttons sit over the bright floor, so the stage is a fair test`);
+      ok(c.btns.length === 12 && low(c.btns, 'text') >= 3, `${tag}: every label reads on its button (lowest ${low(c.btns, 'text')}:1, need 3:1) ${c.btns.filter(b => b.text < 3).map(b => b.b + ' ' + b.text).join(', ')}`);
+      ok(lit.length >= 8 && low(lit, 'edge') >= 3, `${tag}: every button stands out from the bright floor (lowest ${low(lit, 'edge')}:1, need 3:1) ${lit.filter(b => b.edge < 3).map(b => b.b + ' ' + b.edge).join(', ')}`);
+      ok(litS.length >= 1 && low(litS, 'edge') >= 1.5, `${tag}: the stick discs stand out from the bright floor (lowest ${low(litS, 'edge')}:1, need 1.5:1, ${litS.length} of ${c.sticks.length} over it)`);
+      const hc = await p.eval(HUD_CLASH); ok(hc.n >= 5 && hc.bad.length === 0 && p.errors.length === 0, `${tag}: the HUD (${hc.n} parts) is clear of the touch controls ${hc.bad.join('; ')} ${p.errors.slice(0, 1).join('')}`);
+      await p.shot(`41-${name}-contrast-${w}x${h}`);
     }
     await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
   },
