@@ -60,7 +60,7 @@ for (const id of ['mossa', 'quill']) {
 console.log('== mech');
 for (const id of ['pallet', 'ogre']) {
   const c = charById(id), st = c.stats, mid = c.mission; let s = fresh(mid); const y0 = s.p.y;
-  const top = run(s, 140, { ...idle, jump: true }) - y0; ok(top > st.jumpH + 1.2 && s.p.ground, `${c.name}: hover lifts to ${top.toFixed(2)} m, then lands when the fuel runs out`);
+  const top = run(s, 240, { ...idle, jump: true }) - y0; ok(top > st.jumpH + st.hover * 0.8 && top < 4.9 && s.p.ground, `${c.name}: hover lifts to ${top.toFixed(2)} m (under the 5 m walls and gates), then lands when the fuel runs out`);
   s = fresh(mid); const e = s.addEnemy({ kind: 'drone', x: s.p.x + 2, y: 1.4, z: s.p.z - 10, hp: 2 }); run(s, 40, { ...idle, act: true }); const locks = s.p.locks.length; run(s, 1); run(s, 50);
   ok(locks >= 2 && !e.alive, `${c.name}: holding the action paints ${locks} locks; letting go fires and breaks the target`);
   s = fresh(mid); run(s, 1, { ...fwd, dash: true }); ok(speed(s) >= st.dash - 1 && s.p.inv > 0, `${c.name}: thruster dash (${speed(s).toFixed(1)} m/s, briefly safe)`);

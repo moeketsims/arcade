@@ -36,6 +36,11 @@ const BTN = { A: 0, B: 1, START: 9, HOME: 16 }, btns = (...n) => { const b = [];
 const PLAY = `window.__vd && window.__vd.S.name === 'play' && !window.__vd.S.page`, P = 'window.__vd.S.sim.p';
 const tapOn = async (p, sel) => { const r = await p.eval(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, in: b.width > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight }; })()`); if (!r) return null; await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x, y: r.y, id: 3 }] }); await sleep(250); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(250); return r; };
 
+// Every HUD part must be on screen, clear of every touch control and clear of the other HUD parts (1 px of slack). The toast is counted even when faded out.
+const HUD_CLASH = `(() => { const box = (e, n) => { const r = e.getBoundingClientRect(); return { n, l: r.left, t: r.top, r: r.right, b: r.bottom }; }, hit = (a, b) => a.l < b.r - 1 && b.l < a.r - 1 && a.t < b.b - 1 && b.t < a.b - 1;
+  const hud = [...document.querySelectorAll('.vd-tl, .vd-obj, .vd-meter, .vd-boss, #toast')].filter(e => e.getBoundingClientRect().width > 0).map(e => box(e, e.id || e.className)), tc = [...document.querySelectorAll('.tc.on [data-b], .tc.on .tc-stick')].map(e => box(e, e.dataset.b || 'stick')), bad = [];
+  hud.forEach((a, i) => { if (a.l < 0 || a.r > innerWidth || a.t < 0 || a.b > innerHeight) bad.push(a.n + ' off screen'); for (const b of tc) if (hit(a, b)) bad.push(a.n + ' over ' + b.n); for (const b of hud.slice(i + 1)) if (hit(a, b)) bad.push(a.n + ' over ' + b.n); });
+  return { n: hud.length, bad }; })()`;
 const tests = {
   async hub(p) {
     await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length >= 7`, 8000);
@@ -80,7 +85,8 @@ const tests = {
     await p.send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_PAD });
     await p.goto(BASE + '/velocity.html?quick=1&m=u3&c=ogre'); ok(await p.until(PLAY, 15000), 'mission starts with an emulated pad present');
     await sleep(500); const z0 = await p.eval(`${P}.z`); await p.eval(`__fake.set({ axes: [0, -1, 0, 0] })`); await sleep(800);
-    ok(await p.eval(`${P}.z`) < z0 - 3 && await p.eval(`window.__vd.pad.kind`) === 'xbox', 'left stick moves the mech; the pad is read as an Xbox pad');
+    const z1 = await p.eval(`${P}.z`), kind = await p.eval(`window.__vd.pad.kind`);
+    ok(z1 < z0 - 3, `left stick moves the mech (${(z0 - z1).toFixed(1)} m)`); ok(kind === 'xbox', `an Xbox Wireless Controller is read as an Xbox pad (${kind})`);
     const y0 = await p.eval(`${P}.y`); await p.eval(`__fake.set({ axes: [0, 0, 0, 0], buttons: ${btns('A')} })`); await sleep(250); ok(await p.eval(`${P}.y`) > y0 + 0.6, 'A jumps');
     await p.eval(`__fake.set({ buttons: ${btns('B')} })`); await sleep(900); const locks = await p.eval(`${P}.locks.length`); await p.eval(`__fake.set({})`); await sleep(200);
     ok(locks >= 0 && await p.eval(`${P}.locks.length`) === 0, `B held then released runs the lock and fire cycle (${locks} locks at this range)`);
@@ -102,7 +108,10 @@ const tests = {
       await sleep(400); const y0 = await p.eval(`${P}.y`); const a = await p.eval(`(() => { const b = document.querySelector('.tc [data-b=A]').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, label: document.querySelector('.tc [data-b=A]').textContent }; })()`);
       await p.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: a.x, y: a.y, id: 5 }] }); await sleep(250); const y1 = await p.eval(`${P}.y`); await p.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       ok(y1 > y0 + 0.6 && a.label === 'JUMP', `phone ${name}: the A button is labelled JUMP and jumps`); await p.shot(`31-${name}-play`);
+      let hc = await p.eval(HUD_CLASH); ok(hc.n >= 4 && hc.bad.length === 0, `phone ${name}: the HUD (${hc.n} parts) is clear of the touch buttons and of itself ${hc.bad.join('; ')}`);
       ok(p.errors.length === 0, `phone ${name}: no console errors (${p.errors.slice(0, 2).join(' | ')})`);
+      await p.goto(`${BASE}/velocity.html?quick=1&m=u4&c=ogre`); const up = await p.until(PLAY, 15000) && await p.until(`!!document.querySelector('.tc.on') && !!document.querySelector('.vd-boss')`, 5000); await sleep(300);
+      hc = await p.eval(HUD_CLASH); ok(up && hc.n >= 5 && hc.bad.length === 0 && p.errors.length === 0, `phone ${name}: the widest HUD (Ogre-9 with the boss bar, ${hc.n} parts) is clear too ${hc.bad.join('; ')} ${p.errors.slice(0, 1).join('')}`); await p.shot(`32-${name}-boss`);
     }
     await p.send('Emulation.clearDeviceMetricsOverride'); await p.send('Emulation.setTouchEmulationEnabled', { enabled: false });
   },

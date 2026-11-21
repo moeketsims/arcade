@@ -33,8 +33,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070914; col
 .vd-meter { position: absolute; right: calc(14px + env(safe-area-inset-right, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); font-size: 15px; display: flex; gap: 10px; align-items: center; }
 .vd-bar { display: inline-block; width: 110px; vertical-align: middle; } .vd-bar i { background: #33e0ff; }
 .vd-hints { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 14px; font-size: 14px; font-weight: 600; background: #07091488; padding: 5px 14px; border-radius: 16px; white-space: nowrap; }
-body.touch-ui .vd-hints { display: none; } body.touch-ui .vd-obj { top: calc(42px + env(safe-area-inset-top, 0px)); font-size: 14px; } body.touch-ui .vd-boss { top: calc(76px + env(safe-area-inset-top, 0px)); }
-body.touch-ui .vd-meter { top: calc(40px + env(safe-area-inset-top, 0px)); } body.touch-ui .vd-tl { font-size: 16px; gap: 9px; }
+body.touch-ui .vd-hints { display: none; } body.touch-ui .vd-tl { top: calc(40px + env(safe-area-inset-top, 0px)); font-size: 16px; gap: 9px; white-space: nowrap; }
+body.touch-ui .vd-meter { top: calc(40px + env(safe-area-inset-top, 0px)); font-size: 14px; gap: 8px; white-space: nowrap; } body.touch-ui .vd-bar { width: 80px; }
+body.touch-ui .vd-obj { top: calc(70px + env(safe-area-inset-top, 0px)); font-size: 14px; } body.touch-ui .vd-boss { top: calc(106px + env(safe-area-inset-top, 0px)); } body.touch-ui .toast2 { top: calc(142px + env(safe-area-inset-top, 0px)); font-size: 24px; }
 .tc [data-b].vd-lbl { font-size: calc(var(--b) * .24); letter-spacing: .5px; }
 .vd-err { position: fixed; inset: 0; z-index: 9500; background: #070914; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
 .vd-err div { max-width: 560px; } .vd-err a { display: inline-block; margin-top: 14px; padding: 10px 26px; border-radius: 22px; background: #fff; color: #070914; font-weight: 800; text-decoration: none; }
@@ -42,5 +43,9 @@ body.touch-ui .vd-meter { top: calc(40px + env(safe-area-inset-top, 0px)); } bod
   .vd-ui { background: linear-gradient(180deg, #07091400 0, #070914e0 30%, #070914f5 100%); align-items: flex-end; }
   .vd-panel { width: 100%; min-height: 0; max-height: 74%; overflow: auto; }
   .vd-ui.over { align-items: center; } .vd-ui.over .vd-panel { max-height: 100%; }
+  body.touch-ui .vd-meter { top: calc(70px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); right: auto; }
+  body.touch-ui .vd-obj { top: calc(98px + env(safe-area-inset-top, 0px)); } body.touch-ui .vd-boss { top: calc(134px + env(safe-area-inset-top, 0px)); } body.touch-ui .toast2 { top: calc(172px + env(safe-area-inset-top, 0px)); }
+  .vd-card button { position: sticky; bottom: 4px; box-shadow: 0 0 0 6px #0b1022, 0 8px 18px #000c; }
 }
 @media (max-height: 460px) { .vd-panel { gap: 6px; } .vd-it { padding: 6px 12px; } .vd-logo { font-size: 30px; } .vd-rank { font-size: 48px; } }
+@media (max-width: 480px) { .vd-it { padding: 8px 10px; } .vd-it b { font-size: 16px; } .vd-it small { font-size: 12px; } }

@@ -70,7 +70,7 @@ export class Pad {
     this.tl?.sync(!!gp);
     this.touch = !gp && !!this.tl?.active;
     this.gp = gp; this.connected = !!gp || this.touch; this.id = gp ? gp.id : this.touch ? 'Touch controls' : '';
-    this.kind = this.touch ? 'touch' : !gp ? 'keyboard' : /054c|dualsense|dualshock|wireless controller|playstation/i.test(gp.id) ? 'playstation' : /045e|xbox|xinput/i.test(gp.id) ? 'xbox' : 'generic';
+    this.kind = this.touch ? 'touch' : !gp ? 'keyboard' : /045e|xbox|xinput/i.test(gp.id) ? 'xbox' : /054c|dualsense|dualshock|wireless controller|playstation/i.test(gp.id) ? 'playstation' : 'generic';
     // keyboard → sticks
     const k = (o, d) => (this._key(o[d]) ? 1 : 0);
     let lx = k(this.moveKeys, 'right') - k(this.moveKeys, 'left'), ly = k(this.moveKeys, 'up') - k(this.moveKeys, 'down');

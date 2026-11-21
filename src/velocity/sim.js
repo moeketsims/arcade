@@ -135,9 +135,9 @@ export class Sim {
     if (p.dashT <= 0) this.loco(ix, iz, mag, s.top, s.accel, false);
     this.tryJump(s.jumpH);
     if (dp && p.burstCd <= 0) { const dx = mag > 0 ? ix / mag : p.fx, dz = mag > 0 ? iz / mag : p.fz; p.burstCd = 0.9; p.dashT = 0.22; p.vx = dx * s.dash; p.vz = dz * s.dash; p.inv = Math.max(p.inv, 0.3); this.ev('dash'); }
-    p.hovering = !p.ground && !!inp.jump && p.vy < 2 && p.fuel > 0;
+    p.hovering = !p.ground && !!inp.jump && p.vy <= 1.2 && p.fuel > 0;   // a slow climb while the fuel lasts: over the pits and onto the catwalks, never over the 5 m walls and gates
     this.gravity(inp);
-    if (p.hovering) { p.fuel -= DT; p.vy = Math.min(2.5, p.vy + (G + 14) * DT); }
+    if (p.hovering) { p.fuel -= DT; p.vy = Math.min(1.2, p.vy + (G + 14) * DT); }
     if (p.ground) p.fuel = Math.min(s.hover, p.fuel + DT * 2);
     if (inp.act) {   // charging: square up to the nearest target, then paint one lock after another
       p.lockT += DT;
