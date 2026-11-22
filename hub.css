@@ -28,10 +28,10 @@ footer span { display: flex; align-items: center; gap: 8px; }
 #nojs { margin: 18px 0 0; max-width: 760px; padding: 18px 22px; border-radius: 14px; background: #1b2233; border: 1px solid #ffd16688; font-size: 18px; line-height: 1.5; }
 #nojs b { color: #ffd166; }
 #testpanel { position: fixed; z-index: 60; left: 50%; bottom: 14px; transform: translateX(-50%); background: #0b1020; border: 1px solid #33e0ff55; border-radius: 12px; padding: 8px 16px; font: 600 14px Consolas, monospace; white-space: pre; }
-/* Desktop windows too narrow for six 190 px tiles (1280 x 720 is one): shrink the tiles so the row stays on one line
-   and Play stays on screen. 204px = the 96px side padding + five 18px gaps + 18px for a scrollbar. */
-@media (min-width: 701px) and (max-width: 1360px) {
-  .row { gap: 18px; --tile: clamp(150px, calc((100vw - 204px) / 6), 190px); }
+/* Desktop windows too narrow for seven 190 px tiles (1280 x 720 is one): shrink the tiles so the row stays on one line
+   and Play stays on screen. 222px = the 96px side padding + six 18px gaps + 18px for a scrollbar. */
+@media (min-width: 701px) and (max-width: 1580px) {
+  .row { gap: 18px; --tile: clamp(150px, calc((100vw - 222px) / 7), 190px); }
   .tile { width: var(--tile); height: var(--tile); }
 }
 @media (max-width: 700px) {

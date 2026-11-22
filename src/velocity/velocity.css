@@ -1,0 +1,61 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: #070914; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.vd-ui { position: fixed; inset: 0; z-index: 30; display: flex; overflow: auto; background: linear-gradient(90deg, #070914f2 0, #070914cc 48%, #07091400 80%); }
+.vd-ui.over { background: #070914cc; justify-content: center; }
+.vd-panel { width: min(620px, 58vw); min-height: 100%; box-sizing: border-box; padding: clamp(14px, 3vh, 34px) clamp(14px, 3vw, 44px); display: flex; flex-direction: column; gap: 10px; }
+.vd-ui.over .vd-panel { width: min(620px, 94vw); }
+.vd-logo { font-weight: 900; font-size: clamp(34px, 6vw, 64px); line-height: .95; letter-spacing: 2px; font-style: italic; }
+.vd-logo span { display: block; color: #ffc94a; } .vd-logo span + span { color: #b06cff; }
+.vd-panel h2 { margin: 0; font-size: clamp(24px, 4vw, 38px); } .vd-panel h3 { margin: 4px 0 0; font-size: 24px; }
+.vd-panel p { margin: 0; line-height: 1.45; opacity: .9; font-size: 16px; }
+.vd-list { display: grid; grid-template-columns: repeat(var(--cols, 1), 1fr); gap: 8px; }
+.vd-it { padding: 10px 14px; border-radius: 12px; background: #ffffff14; border: 2px solid #0000; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.vd-it b { font-size: 18px; } .vd-it i { margin-left: auto; font-style: normal; font-weight: 800; color: #ffe066; } .vd-it small { width: 100%; opacity: .75; font-size: 13px; }
+.vd-it.sel { background: #33e0ff; color: #08203a; border-color: #fff; } .vd-it.sel i { color: #08203a; }
+.vd-it.off { opacity: .4; cursor: default; }
+.vd-it.dawn { border-left: 6px solid #ffc94a; } .vd-it.umbra { border-left: 6px solid #b06cff; } .vd-it.both { border-left: 6px solid #9ff5ff; }
+.vd-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: #ffc94a; color: #2a1d00; }
+.vd-tag.umbra { background: #b06cff; color: #1a0633; } .vd-tag.both { background: #9ff5ff; color: #06202a; }
+.vd-card { background: #0b1022cc; border: 1px solid #ffffff22; border-radius: 14px; padding: 12px 16px; }
+.vd-card ul { margin: 8px 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 14px; }
+.vd-role { font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; opacity: .8; margin-bottom: 4px; }
+.vd-next { font-size: 14px; opacity: .9; margin-bottom: 8px; }
+.vd-card button, .vd-btn { font: 800 16px "Segoe UI", sans-serif; padding: 9px 22px; border-radius: 22px; border: none; background: #fff; color: #070914; cursor: pointer; display: inline-block; }
+.vd-foot { margin-top: auto; padding-top: 8px; font-size: 14px; opacity: .85; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vd-rank { font-size: 76px; font-weight: 900; font-style: italic; line-height: 1; color: #ffe066; text-shadow: 0 6px 0 #0008; }
+.vd-stats { display: grid; grid-template-columns: auto auto; gap: 2px 18px; justify-content: start; font-size: 17px; } .vd-stats b { text-align: right; }
+.vd-hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; font-weight: 800; text-shadow: 0 0 3px #000, 0 2px 4px #000c; }
+.vd-tl { position: absolute; left: calc(14px + env(safe-area-inset-left, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); display: flex; gap: 14px; font-size: 19px; align-items: center; }
+.vd-hearts { color: #ff5a7a; letter-spacing: 2px; } .vd-hearts em { color: #ffffff44; font-style: normal; }
+.vd-obj { position: absolute; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 5px 16px; border-radius: 16px; background: #070914aa; font-size: 16px; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+.vd-boss { position: absolute; left: 50%; top: calc(48px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); width: min(460px, 70vw); font-size: 14px; text-align: center; }
+.vd-boss div, .vd-bar { height: 10px; border-radius: 6px; background: #ffffff33; overflow: hidden; } .vd-boss i, .vd-bar i { display: block; height: 100%; background: #ff5fd0; }
+.vd-meter { position: absolute; right: calc(14px + env(safe-area-inset-right, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); font-size: 15px; display: flex; gap: 10px; align-items: center; }
+.vd-bar { display: inline-block; width: 110px; vertical-align: middle; } .vd-bar i { background: #33e0ff; }
+.vd-hints { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 14px; font-size: 14px; font-weight: 600; background: #07091488; padding: 5px 14px; border-radius: 16px; white-space: nowrap; }
+body.touch-ui .vd-hints { display: none; } body.touch-ui .vd-tl { top: calc(40px + env(safe-area-inset-top, 0px)); font-size: 16px; gap: 9px; white-space: nowrap; }
+body.touch-ui .vd-meter { top: calc(40px + env(safe-area-inset-top, 0px)); font-size: 14px; gap: 8px; white-space: nowrap; } body.touch-ui .vd-bar { width: 80px; }
+body.touch-ui .vd-obj { top: calc(70px + env(safe-area-inset-top, 0px)); font-size: 14px; } body.touch-ui .vd-boss { top: calc(106px + env(safe-area-inset-top, 0px)); } body.touch-ui .toast2 { top: calc(142px + env(safe-area-inset-top, 0px)); font-size: 24px; }
+.tc [data-b].vd-lbl { font-size: calc(var(--b) * .24); letter-spacing: .5px; }
+/* touch controls, this game only: dark glass with a dark rim, so the white labels and rings also read on bright stages */
+body .tc [data-b] { background: #070914b8; box-shadow: 0 0 0 2px #070914aa; }
+body .tc [data-b].on { background: #ffffffe0; color: #070914; text-shadow: none; }
+body .tc-face [data-b] { color: #fff; }
+body .tc .tc-stick { background: radial-gradient(#07091440, #07091480); box-shadow: 0 0 0 2px #07091488; }
+body .tc .tc-knob { background: #ffffffcc; border-color: #fff; box-shadow: 0 0 0 2px #070914aa; }
+.toast2 { text-shadow: 0 0 3px #000, 0 0 8px #000b, 0 3px 0 #0009; }
+.vd-err { position: fixed; inset: 0; z-index: 9500; background: #070914; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+.vd-err div { max-width: 560px; } .vd-err a { display: inline-block; margin-top: 14px; padding: 10px 26px; border-radius: 22px; background: #fff; color: #070914; font-weight: 800; text-decoration: none; }
+@media (orientation: portrait) {
+  .vd-ui { background: linear-gradient(180deg, #07091400 0, #070914e0 30%, #070914f5 100%); align-items: flex-end; }
+  .vd-panel { width: 100%; min-height: 0; max-height: 74%; overflow: auto; }
+  .vd-ui.over { align-items: center; } .vd-ui.over .vd-panel { max-height: 100%; }
+  body.touch-ui .vd-meter { top: calc(70px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); right: auto; }
+  body.touch-ui .vd-obj { top: calc(98px + env(safe-area-inset-top, 0px)); } body.touch-ui .vd-boss { top: calc(134px + env(safe-area-inset-top, 0px)); } body.touch-ui .toast2 { top: calc(172px + env(safe-area-inset-top, 0px)); }
+  .vd-ui { box-sizing: border-box; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .vd-panel { padding-bottom: 0; } .vd-foot { padding-bottom: clamp(14px, 3vh, 34px); }
+  .vd-card ul, .vd-next { margin-bottom: 14px; }
+  .vd-card button { position: sticky; bottom: 8px; display: block; width: 100%; min-height: 48px; box-shadow: 0 0 0 8px #0b1022; }
+}
+@media (max-height: 460px) { .vd-panel { gap: 6px; } .vd-it { padding: 6px 12px; } .vd-logo { font-size: 30px; } .vd-rank { font-size: 48px; } }
+@media (max-width: 480px) { .vd-it { padding: 8px 10px; } .vd-it b { font-size: 16px; } .vd-it small { font-size: 12px; } }

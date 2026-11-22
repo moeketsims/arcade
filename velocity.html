@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Velocity Divide</title>
+<link rel="stylesheet" href="src/common/arcade.css">
+<link rel="stylesheet" href="src/velocity/velocity.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud" class="vd-hud hidden"></div>
+<div id="ui" class="vd-ui hidden"></div>
+<div id="toast" class="toast2"></div>
+<div id="err" class="vd-err hidden"></div>
+<script type="module" src="src/velocity/main.js"></script>
+</body>
+</html>
