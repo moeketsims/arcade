@@ -1,5 +1,5 @@
 // Arcade home screen: pick a game with the D-pad / left stick, A to play. Touchpad opens the live controller test.
-import { Pad } from './common/pad.js';
+import { Pad } from './common/pad.js?v=velocity-divide-1';
 import { ControllerOverlay } from './common/overlay.js';
 import { Sfx } from './common/sfx.js';
 
