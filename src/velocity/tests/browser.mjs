@@ -82,10 +82,10 @@ const tests = {
   async hub(p) {
     await p.goto(BASE + '/index.html?from=starbolt'); await p.until(`document.querySelectorAll('.tile').length >= 7`, 8000);
     const tiles = await p.eval(`[...document.querySelectorAll('.tile .tname')].map(e => e.textContent)`);
-    ok(tiles.length === 7 && tiles.includes('Velocity Divide'), `hub shows seven tiles with Velocity Divide (${tiles.join(', ')})`);
-    ok(['Starbolt', 'Golazo Football', 'Storm Royale', 'Frontline Ops', 'Sparkplug GP', 'Controller Test'].every(t => tiles.includes(t)), 'hub still lists every existing tile');
-    for (let i = 0; i < 8; i++) { if (await p.eval(`document.getElementById('gTitle').textContent`) === 'Velocity Divide') break; await p.key('ArrowRight'); }
-    await p.key('Enter');
+    ok(tiles.length === 8 && tiles.includes('Velocity Divide'), `hub shows eight tiles with Velocity Divide (${tiles.join(', ')})`);
+    ok(['Starbolt', 'Golazo Football', 'Storm Royale', 'Frontline Ops', 'Sparkplug GP', 'Aura Clash', 'Controller Test'].every(t => tiles.includes(t)), 'hub still lists every existing tile');
+    for (let i = 0; i < 8; i++) { if (await p.eval(`document.getElementById('gTitle').textContent`) === 'Velocity Divide') break; await p.key('ArrowRight', 'down'); await sleep(140); await p.key('ArrowRight', 'up'); }
+    await p.key('Enter', 'down'); await sleep(140); await p.key('Enter', 'up');
     ok(await p.until(`location.pathname.endsWith('velocity.html')`, 8000) && await p.until(`!!document.querySelector('.vd-logo')`, 15000), 'Enter on the tile opens velocity.html and its title screen');
     ok(p.errors.length === 0, `no console errors (${p.errors.slice(0, 2).join(' | ')})`);
   },

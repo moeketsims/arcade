@@ -152,3 +152,10 @@ diagram), `humanoid.js` (jointed 3D people + animation library), `sfx.js` (synth
 `src/` (top level) Starbolt. `src/royale/`, `src/frontline/` the two shooters. `src/kart/` Sparkplug GP (`data.js` racers, karts,
 tracks and items; `track.js` spline tracks; `sim.js` the race simulation, CPU drivers and items, no Three.js;
 `view.js` 3D scenes and cameras; `hud.js`, `audio.js`, `main.js` menus and race flow). `serve.py` is a no-cache dev server.
+
+
+## Aura Clash
+
+Original 3D arena fighter: four free fighters, rotating CPU rivals, one signature move per fighter, and optional cosmetic changes earned with in-game coins. From the local Arcade, choose **Aura Clash**, or open "aura.html". Arrow keys/WASD or left stick/D-pad move; J/X light, K/Y heavy, L/B energy, I/R2 special, Shift/R1 dash, U/L1 guard. Escape/Start pauses; Home returns to Arcade. Touch devices display an on-screen controller. The wallet is stored only in the browser and has no cash value.
+
+Local verification: "node --test src/aura/sim.test.mjs"; with the preview server running and Node 22+/Chrome, "node src/aura/browser.mjs --base http://127.0.0.1:5186".
