@@ -37,7 +37,7 @@ const tests = {
   const base=BASE, a=()=>p.eval('window.auraPreview()'), click=q=>p.eval('document.querySelector('+JSON.stringify(q)+').click()');
   const check=async(expr,msg)=>ok(await p.until(expr,6000),msg);
   await p.goto(base+'/'); await check("[...document.querySelectorAll('.tname')].some(x=>x.textContent==='Aura Clash')",'hub includes Aura Clash');
-  ok((await p.eval("document.querySelectorAll('.tile').length"))===8,'all previous tiles plus Aura Clash');
+  ok((await p.eval("document.querySelectorAll('.tile').length"))===9,'all nine tiles, Aura Clash among them');
   await click('.tile:nth-child(2)'); await check("window.auraPreview?.().mode==='select'",'hub tile opens Aura Clash');
   ok(await p.eval("document.querySelectorAll('.fighter').length===4 && document.querySelector('#wallet').textContent==='0'"),'four free fighters, no starting purchase needed');
   await p.shot('01-aura-roster');
