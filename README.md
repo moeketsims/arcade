@@ -41,6 +41,7 @@ Buttons are named by position, as on Xbox: **A** = bottom (PS ✕), **B** = righ
 | Frontline Ops | First-person military shooter: loadouts, scorestreaks, firing range | `frontline.html` |
 | Sparkplug GP | Kart racer: 6 tracks, 3 cups, time trial with ghosts, 8 racers, 4 karts, items, replays | `kart.html` |
 | Velocity Divide | 3D action adventure: 6 characters on two sides, 9 missions, 3 bosses, ranks | `velocity.html` |
+| Moya | Mind-reading game: think of anyone, real or made-up, and Moya guesses who it is; teach it new people | `moya.html` |
 
 ## Golazo Football controls
 
@@ -127,6 +128,38 @@ burst, scan or thruster dash · left stick or D-pad move · right stick camera �
 music · Options pause. Keyboard: WASD, Space, J or F, Shift or Q / E, arrow keys for the camera (or click the game and
 use the mouse), C, M, Esc. Progress and best ranks are kept in the browser.
 
+## Moya, the mind reader
+
+Think of a character, real or made-up: a footballer, a singer, a cartoon star, a game hero, someone from history. Moya
+asks questions and guesses who it is. It knows 243 characters (Bafana Bafana and Banyana Banyana players, amapiano DJs,
+Springboks, world football, music, film, YouTube, history, science, cartoons, anime, games and comics), and if you stump
+it, you can tell it who you were thinking of: it remembers them in this browser and can guess them next time.
+
+| Answer | Controller | Keyboard | Meaning |
+|---|---|---|---|
+| Yes | **A** | 1 or Y | It is true |
+| No | **B** | 2 or N | It is not true |
+| Probably | **Y** | 3 or P | Probably true, not sure |
+| Maybe | **R1** | 4 or M | Partly true, or only sometimes |
+| Probably not | **X** | 5 | Probably not true, not sure |
+| I don't know | **L1** | 6 or I | No idea: Moya skips it |
+
+L2 / Backspace undoes the last answer, R2 / V reads the question aloud, Options / Esc opens the menu (new game, sound,
+read questions aloud, forget what you taught), Create / S turns the sound on or off, the touchpad / H shows the controls,
+L3 spins Moya and R3 tickles it (so does clicking or tapping Moya); the right stick moves its eyes. Mouse and touch work
+too: click or tap the answers.
+
+How it works: `src/moya/engine.js` keeps a probability for every character and updates it after each answer (Bayes'
+rule with a forgiving answer model, so one mistaken answer does not rule anyone out; "I don't know" changes nothing).
+The next question is the one that is expected to teach Moya the most (information gain). Moya guesses when it is at
+least 93% sure (or 72% sure and far ahead of the next character), or after 25 questions (8 more after each wrong
+guess), up to four guesses. Facts live in
+`src/moya/data.js` as short tags per character; a fact Moya is unsure of is marked unknown and skipped rather than
+guessed. Facts were checked in November 2026 (for example the 2026 World Cup, won by Spain, and the 2026 Ballon d'Or,
+won by Harry Kane); things like clubs are asked as "has played for", so they stay true when players move. Moya is an
+original character drawn in SVG; real people and well-known characters appear only as names and short descriptions,
+with no pictures.
+
 ## Testing shortcuts
 
 - `starbolt.html?world=N` (0–5) and `?unlock=1`.
@@ -142,6 +175,9 @@ use the mouse), C, M, Esc. Progress and best ranks are kept in the browser.
   (hub, the four other games, menus, a race start to finish, results, replay, restart, Grand Prix, time trial,
   keyboard, emulated DualSense and Xbox pads, multi-touch and phone layouts; screenshots go to the temp folder).
 - `velocity.html?quick=1&m=d1..d4|u1..u4|x1&c=kite|mossa|pallet|vesper|quill|ogre` goes straight into a mission. Extra flags: `&auto=1` (autopilot), `&speed=N`, `&seed=N`. Headless: `node src/velocity/tests/sim.test.mjs`. Browser: `node src/velocity/tests/browser.mjs`.
+- Moya: `node --test src/moya/engine.test.mjs` checks every fact tag and plays a full game against each of the 243
+  characters (an honest player, then one who makes mistakes). Browser: `node src/moya/browser.mjs` (hub tile, a whole
+  game, keyboard, an emulated Xbox pad, teaching Moya, a phone).
 
 ## Code map
 
@@ -151,7 +187,9 @@ diagram), `humanoid.js` (jointed 3D people + animation library), `sfx.js` (synth
 `src/hub.js` the Arcade home. `src/football/` Golazo (stadium, ball physics, players, AI, match engine).
 `src/` (top level) Starbolt. `src/royale/`, `src/frontline/` the two shooters. `src/kart/` Sparkplug GP (`data.js` racers, karts,
 tracks and items; `track.js` spline tracks; `sim.js` the race simulation, CPU drivers and items, no Three.js;
-`view.js` 3D scenes and cameras; `hud.js`, `audio.js`, `main.js` menus and race flow). `serve.py` is a no-cache dev server.
+`view.js` 3D scenes and cameras; `hud.js`, `audio.js`, `main.js` menus and race flow). `src/moya/` Moya (`data.js`
+characters, questions and facts; `engine.js` the guessing, no DOM; `mascot.js` the animated SVG Moya; `main.js` screens,
+input, sound and saving). `serve.py` is a no-cache dev server.
 
 
 ## Aura Clash
